@@ -311,6 +311,17 @@
     </div>
     <p id="s2-collector-info" style="font-weight:600; color:var(--green); margin-bottom:15px;"></p>
     
+    <!-- SEARCH SECTION -->
+    <div class="card" style="background:#0a1628; border:1px solid #FCD116;">
+      <h3 style="color:white; margin-top:0;">Search Bill</h3>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="bill-search-input" placeholder="Search by Account/Bill Number...">
+        <button class="btn btn-green" style="margin:0; width:auto; padding:12px 20px;" onclick="searchBill()">Search</button>
+      </div>
+      <div id="search-result" style="margin-top:15px; display:none; background:white; padding:15px; border-radius:8px; color:black;">
+      </div>
+    </div>
+    
     <div id="bills-container"></div>
     
     <div class="running-totals">
@@ -547,86 +558,189 @@
       return;
     }
     
+    console.log('Selected collector:', currentCollector);
+    console.log('Bills found:', billsData[currentCollector.name]);
+
     document.getElementById('s2-collector-info').innerText = 
       `Unit ${currentCollector.unit} — ${currentCollector.name}`;
       
     const container = document.getElementById('bills-container');
     container.innerHTML = '';
+    document.getElementById('search-result').style.display = 'none';
+    document.getElementById('bill-search-input').value = '';
     
     const bills = billsData[currentCollector.name] || [];
-    formBills = bills.map(b => ({...b, delivered: null}));
+    formBills = [];
     
     if (bills.length === 0) {
-      container.innerHTML = '<div class="card"><p>No bills assigned yet. Bills will appear after admin uploads the bill list.</p></div>';
+      container.innerHTML = '<div class="card" id="no-bills-msg"><p>No pre-loaded bills. Use bill search below.</p></div>';
     } else {
-      bills.forEach((bill, idx) => {
-        const card = document.createElement('div');
-        card.className = 'bill-card';
-        card.innerHTML = `
-          <div class="bill-header">
-            <strong>${bill.id}</strong>
-            <span class="badge">${bill.useType}</span>
-          </div>
-          <div class="bill-amount">GHS ${bill.amount.toFixed(2)}</div>
-          
-          <label>Delivered?</label>
-          <div class="delivery-buttons">
-            <button type="button" id="btn-yes-${idx}" onclick="setDelivery(${idx}, 'yes')">YES</button>
-            <button type="button" id="btn-no-${idx}" onclick="setDelivery(${idx}, 'no')">NO</button>
-          </div>
-          
-          <div id="form-yes-${idx}" class="details-form">
-            <div class="form-group">
-              <label>Ratepayer Name *</label>
-              <input type="text" id="rp-name-${idx}" onchange="updateTotals()">
-            </div>
-            <div class="form-group">
-              <label>Ratepayer Phone</label>
-              <input type="text" id="rp-phone-${idx}" onchange="updateTotals()">
-            </div>
-            <div class="form-group">
-              <label>Amount Paid (GHS) *</label>
-              <input type="number" step="0.01" id="rp-amount-${idx}" onchange="updateTotals()">
-            </div>
-            <div class="form-group">
-              <label>Mode of Payment</label>
-              <select id="rp-mode-${idx}">
-                <option value="Cash">Cash</option>
-                <option value="Mobile Money">Mobile Money</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cheque">Cheque</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Receipt/Ref #</label>
-              <input type="text" id="rp-receipt-${idx}">
-            </div>
-          </div>
-          
-          <div id="form-no-${idx}" class="details-form">
-            <div class="form-group">
-              <label>Reason</label>
-              <select id="rp-reason-${idx}" onchange="toggleOtherReason(${idx})">
-                <option value="Property Not Found">Property Not Found</option>
-                <option value="Ratepayer Not Around">Ratepayer Not Around</option>
-                <option value="Property Locked">Property Locked</option>
-                <option value="Ratepayer Refused">Ratepayer Refused</option>
-                <option value="Wrong Address">Wrong Address</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="form-group" id="other-reason-group-${idx}" style="display:none;">
-              <label>Other Reason *</label>
-              <input type="text" id="rp-other-${idx}">
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
+      bills.forEach((bill) => {
+        addBillToUI(bill);
       });
     }
     
     updateTotals();
     showScreen('screen-step2');
+  }
+
+  function searchBill() {
+    const q = document.getElementById('bill-search-input').value.trim().toLowerCase();
+    if (!q) return;
+    
+    let foundBill = null;
+    let foundCollector = null;
+    let foundSupervisor = null;
+    
+    for (const [collectorName, bills] of Object.entries(billsData)) {
+      const match = bills.find(b => b.id.toLowerCase() === q);
+      if (match) {
+        foundBill = match;
+        foundCollector = collectorName;
+        for (const [sup, data] of Object.entries(supervisorData)) {
+          if (data.collectors.find(c => c.name === collectorName)) {
+            foundSupervisor = sup;
+            break;
+          }
+        }
+        break;
+      }
+    }
+    
+    const resDiv = document.getElementById('search-result');
+    resDiv.style.display = 'block';
+    
+    if (foundBill) {
+      resDiv.innerHTML = `
+        <p><strong>Account Number:</strong> ${foundBill.id}</p>
+        <p><strong>Assigned Collector:</strong> ${foundCollector}</p>
+        <p><strong>Supervisor:</strong> ${foundSupervisor}</p>
+        <p><strong>Bill Amount:</strong> GHS ${foundBill.amount.toFixed(2)}</p>
+        <p><strong>Use Type:</strong> <span class="badge">${foundBill.useType}</span></p>
+        <button class="btn btn-green" onclick='addBillToForm(${JSON.stringify(foundBill)})'>Fill Details</button>
+      `;
+    } else {
+      resDiv.innerHTML = `
+        <p style="color:var(--red); font-weight:bold;">Bill not found in system</p>
+        <p>Add manually?</p>
+        <div class="form-group">
+          <label style="color:var(--navy);">Account Number</label>
+          <input type="text" id="manual-acct" value="${q.toUpperCase()}">
+        </div>
+        <div class="form-group">
+          <label style="color:var(--navy);">Bill Amount (GHS)</label>
+          <input type="number" id="manual-amt" step="0.01">
+        </div>
+        <div class="form-group">
+          <label style="color:var(--navy);">Use Type</label>
+          <select id="manual-use">
+            <option value="RP">RP</option>
+            <option value="CP">CP</option>
+            <option value="SP">SP</option>
+            <option value="MX">MX</option>
+            <option value="IP">IP</option>
+          </select>
+        </div>
+        <button class="btn" onclick="addManualBill()">Add Manually</button>
+      `;
+    }
+  }
+
+  function addBillToForm(bill) {
+    if (formBills.find(b => b.id === bill.id)) {
+      alert("This bill is already in your current list.");
+      return;
+    }
+    addBillToUI(bill);
+    document.getElementById('search-result').style.display = 'none';
+    document.getElementById('bill-search-input').value = '';
+    updateTotals();
+  }
+
+  function addManualBill() {
+    const acct = document.getElementById('manual-acct').value.trim();
+    const amt = parseFloat(document.getElementById('manual-amt').value);
+    const use = document.getElementById('manual-use').value;
+    
+    if (!acct || isNaN(amt)) {
+      alert("Please fill Account Number and Bill Amount");
+      return;
+    }
+    
+    addBillToForm({ id: acct, amount: amt, useType: use });
+  }
+
+  function addBillToUI(bill) {
+    const idx = formBills.length;
+    const newBillObj = {...bill, delivered: null};
+    formBills.push(newBillObj);
+    
+    const container = document.getElementById('bills-container');
+    const noMsg = document.getElementById('no-bills-msg');
+    if (noMsg) noMsg.remove();
+    
+    const card = document.createElement('div');
+    card.className = 'bill-card';
+    card.innerHTML = `
+      <div class="bill-header">
+        <strong>${bill.id}</strong>
+        <span class="badge">${bill.useType}</span>
+      </div>
+      <div class="bill-amount">GHS ${bill.amount.toFixed(2)}</div>
+      
+      <label style="color:var(--navy);">Delivered?</label>
+      <div class="delivery-buttons">
+        <button type="button" id="btn-yes-${idx}" onclick="setDelivery(${idx}, 'yes')">YES</button>
+        <button type="button" id="btn-no-${idx}" onclick="setDelivery(${idx}, 'no')">NO</button>
+      </div>
+      
+      <div id="form-yes-${idx}" class="details-form">
+        <div class="form-group">
+          <label style="color:var(--navy);">Ratepayer Name *</label>
+          <input type="text" id="rp-name-${idx}" onchange="updateTotals()">
+        </div>
+        <div class="form-group">
+          <label style="color:var(--navy);">Ratepayer Phone</label>
+          <input type="text" id="rp-phone-${idx}" onchange="updateTotals()">
+        </div>
+        <div class="form-group">
+          <label style="color:var(--navy);">Amount Paid (GHS) *</label>
+          <input type="number" step="0.01" id="rp-amount-${idx}" onchange="updateTotals()">
+        </div>
+        <div class="form-group">
+          <label style="color:var(--navy);">Mode of Payment</label>
+          <select id="rp-mode-${idx}">
+            <option value="Cash">Cash</option>
+            <option value="Mobile Money">Mobile Money</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="color:var(--navy);">Receipt/Ref #</label>
+          <input type="text" id="rp-receipt-${idx}">
+        </div>
+      </div>
+      
+      <div id="form-no-${idx}" class="details-form">
+        <div class="form-group">
+          <label style="color:var(--navy);">Reason</label>
+          <select id="rp-reason-${idx}" onchange="toggleOtherReason(${idx})">
+            <option value="Property Not Found">Property Not Found</option>
+            <option value="Ratepayer Not Around">Ratepayer Not Around</option>
+            <option value="Property Locked">Property Locked</option>
+            <option value="Ratepayer Refused">Ratepayer Refused</option>
+            <option value="Wrong Address">Wrong Address</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group" id="other-reason-group-${idx}" style="display:none;">
+          <label style="color:var(--navy);">Other Reason *</label>
+          <input type="text" id="rp-other-${idx}">
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
   }
 
   function setDelivery(idx, status) {
