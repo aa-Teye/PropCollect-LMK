@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PropCollect - Ghana Property Rate Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0a1628;
+      --gold: #FCD116;
+      --green: #006B3F;
+      --red: #CE1126;
+      --bg: #f4f7f6;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo svg {
+      width: 150px;
+      height: 100px;
+    }
+    h1 {
+      color: var(--navy);
+      font-size: 24px;
+      margin: 10px 0 5px 0;
+    }
+    p.subtitle {
+      color: var(--green);
+      font-weight: 600;
+      font-size: 14px;
+      margin: 0;
+    }
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+    .card h3 {
+      margin: 0 0 5px 0;
+      color: var(--navy);
+    }
+    .card p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    select, input[type="date"], input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-green {
+      background: var(--green);
+    }
+    .bill-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .bill-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .badge {
+      background: var(--gold);
+      color: var(--navy);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .bill-amount {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--green);
+      margin-bottom: 15px;
+    }
+    .delivery-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .delivery-buttons button {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border);
+      background: #fff;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .delivery-buttons button.active-yes {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+    }
+    .delivery-buttons button.active-no {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+    .details-form {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+      margin-top: 15px;
+    }
+    .details-form.active {
+      display: block;
+    }
+    .running-totals {
+      position: sticky;
+      bottom: 0;
+      background: var(--navy);
+      color: white;
+      padding: 15px;
+      border-radius: 8px 8px 0 0;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+      z-index: 100;
+    }
+    .summary-box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .summary-box p {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+      margin: 0;
+    }
+    .summary-box p:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      font-size: 18px;
+      color: var(--green);
+    }
+    .success-icon {
+      font-size: 60px;
+      color: var(--green);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 15px;
+      color: var(--navy);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+        <rect width="900" height="200" fill="#006B3F"/>
+        <rect y="200" width="900" height="200" fill="#FCD116"/>
+        <rect y="400" width="900" height="200" fill="#CE1126"/>
+        <polygon points="450,220 468,276 524,276 478,310 496,366 450,332 404,366 422,310 376,276 432,276" fill="#000"/>
+      </svg>
+    </div>
+    <h1>PropCollect</h1>
+    <p class="subtitle">Ghana Property Rate Management</p>
+  </div>
+
+  <!-- LANDING PAGE -->
+  <div id="screen-landing" class="screen active">
+    <h2 style="text-align:center; font-size: 18px;">Select Supervisor</h2>
+    <div id="supervisors-list"></div>
+  </div>
+
+  <!-- STEP 1: SELECT COLLECTOR & DATE -->
+  <div id="screen-step1" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-landing')">←</button>
+      <h2 id="s1-supervisor-name" style="margin:0; font-size: 18px;"></h2>
+    </div>
+    
+    <div class="form-group">
+      <label for="collector-select">Select Collector</label>
+      <select id="collector-select" onchange="updateBillCount()"></select>
+    </div>
+    <div class="form-group">
+      <label for="date-select">Date</label>
+      <input type="date" id="date-select">
+    </div>
+    
+    <div class="card" style="text-align: center; background: #eef2ff;">
+      <h3 style="font-size: 24px;" id="bill-count-display">0</h3>
+      <p>bills assigned</p>
+    </div>
+    
+    <button class="btn" onclick="goToStep2()">Next</button>
+  </div>
+
+  <!-- STEP 2: BILL DETAILS -->
+  <div id="screen-step2" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-step1')">←</button>
+      <h2 style="margin:0; font-size: 18px;">Bill Details</h2>
+    </div>
+    <p id="s2-collector-info" style="font-weight:600; color:var(--green); margin-bottom:15px;"></p>
+    
+    <div id="bills-container"></div>
+    
+    <div class="running-totals">
+      <div>Total: <span id="rt-total">0</span></div>
+      <div>Delivered ✅: <span id="rt-delivered">0</span></div>
+      <div>Failed ❌: <span id="rt-failed">0</span></div>
+      <div style="width:100%;">Collected: GHS <span id="rt-collected">0.00</span></div>
+    </div>
+    
+    <button class="btn" style="margin-bottom: 80px;" onclick="goToStep3()">Review & Submit</button>
+  </div>
+
+  <!-- STEP 3: REVIEW & SUBMIT -->
+  <div id="screen-step3" class="screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('screen-step2')">←</button>
+      <h2 style="margin:0; font-size: 18px;">Review & Submit</h2>
+    </div>
+    
+    <div class="summary-box">
+      <p><span>Supervisor:</span> <strong id="sum-supervisor"></strong></p>
+      <p><span>Collector:</span> <strong id="sum-collector"></strong></p>
+      <p><span>Date:</span> <strong id="sum-date"></strong></p>
+    </div>
+    
+    <div class="summary-box">
+      <p><span>Total Bills:</span> <strong id="sum-total-bills"></strong></p>
+      <p><span>Delivered ✅:</span> <strong id="sum-delivered"></strong></p>
+      <p><span>Failed ❌:</span> <strong id="sum-failed"></strong></p>
+      <p><span>Amount Collected:</span> <strong id="sum-collected"></strong></p>
+    </div>
+    
+    <button class="btn btn-green" onclick="submitData()">CONFIRM & SUBMIT</button>
+  </div>
+
+  <!-- SUCCESS SCREEN -->
+  <div id="screen-success" class="screen">
+    <div class="success-icon">✓</div>
+    <h2 style="text-align:center;">Report Submitted Successfully!</h2>
+    <div class="summary-box" style="margin-top: 20px;">
+      <p><span>Total Bills Delivered:</span> <strong id="succ-delivered"></strong></p>
+      <p><span>Total Amount Collected:</span> <strong id="succ-collected"></strong></p>
+    </div>
+    <button class="btn" onclick="resetApp()">Submit Another Report</button>
+  </div>
+  
+  <div id="loading">Submitting... Please wait.</div>
+
+</div>
+
+<script>
+  const supervisorData = {
+    "Felix Abevi Vifah": {
+      unit: "Collection Units 1-21",
+      collectors: [
+        {name:"Adjei Messiah", unit:1, phone:"505516587"},
+        {name:"Ali Mohammed", unit:2, phone:"548208732"},
+        {name:"Felicia Gyamfi", unit:3, phone:"244287608"},
+        {name:"David Mensah", unit:4, phone:"543495099"},
+        {name:"Emmanuel Anka Forson", unit:5, phone:"556251256"},
+        {name:"Kofi Anomansah", unit:6, phone:"549006409"},
+        {name:"Esther Amatey", unit:7, phone:"248137317"},
+        {name:"Evans Nii Tetteh Badger", unit:8, phone:"550999542"},
+        {name:"Faustina Awiah Banlogo", unit:9, phone:"244495859"},
+        {name:"Felicia Dakoury", unit:10, phone:"244523193"},
+        {name:"Happiana Maku Pinto", unit:11, phone:"249037227"},
+        {name:"Hellen Agbeyeyeye", unit:12, phone:"552171437"},
+        {name:"Isaac Awarful", unit:13, phone:"557136805"},
+        {name:"Laud Yartey", unit:14, phone:"572182088"},
+        {name:"Lydia Denkyi", unit:15, phone:"242077365"},
+        {name:"Meshack Kwaku Adjei", unit:16, phone:"247569414"},
+        {name:"Mr. Joseph Adjei Adjetey", unit:17, phone:"244029287"},
+        {name:"Enock Mensah Wonkyi", unit:18, phone:"530295207"},
+        {name:"Nyarko Deborah", unit:19, phone:"533282741"},
+        {name:"Paul Okoe Tetteh", unit:20, phone:"557438213"},
+        {name:"Prince Antwi", unit:21, phone:"270956124"}
+      ]
+    },
+    "Linda Arthur": {
+      unit: "Collection Units 22-42",
+      collectors: [
+        {name:"Prince Opoku", unit:22, phone:"550766676"},
+        {name:"Raphael Darpoh", unit:23, phone:"244832930"},
+        {name:"Reuben Quarcoo", unit:24, phone:"561577884"},
+        {name:"Sandra Lartey", unit:25, phone:"544049176"},
+        {name:"Shadrack Akakpo", unit:26, phone:"541110048"},
+        {name:"Stephany Klutse", unit:27, phone:"241919886"},
+        {name:"Thomas Bentum Yankey", unit:28, phone:"264464464"},
+        {name:"Clement Elorm Aponi", unit:29, phone:"548334994"},
+        {name:"Emmanuella Owusu Ansah", unit:30, phone:"256476863"},
+        {name:"Ruth Lartey", unit:31, phone:"593684135"},
+        {name:"Veronica Yanney", unit:32, phone:"553470895"},
+        {name:"Wilhelmina Appiah", unit:33, phone:"546691051"},
+        {name:"Elizabeth Esi Amegashie", unit:34, phone:"554592808"},
+        {name:"Ernest Brobbey", unit:35, phone:"558290185"},
+        {name:"Priscilla Ofosu", unit:36, phone:"0546733244"},
+        {name:"Charles Nii Addy", unit:37, phone:"558288060"},
+        {name:"Nana Korankyewa Hanson", unit:38, phone:"240014670"},
+        {name:"Josephine Techie-Menson", unit:39, phone:"243648676"},
+        {name:"Theophilus Nana Gyimah", unit:40, phone:"545994109"},
+        {name:"Felicia Bekoe", unit:41, phone:"558220809"},
+        {name:"Sule Marfo", unit:42, phone:"553446246"}
+      ]
+    },
+    "Afua Tenkorang": {
+      unit: "Collection Units 43-58",
+      collectors: [
+        {name:"Clifford Kwesi Amoako-Essel", unit:43, phone:"244949668"},
+        {name:"Bashir Mohammed Saeed", unit:44, phone:"503817056"},
+        {name:"Nancy Oppong", unit:45, phone:"248688627"},
+        {name:"Felix Owusu", unit:46, phone:"544694748"},
+        {name:"Martha Larkotey", unit:47, phone:"244497766"},
+        {name:"Joseph Martey-Korley", unit:48, phone:"243759191"},
+        {name:"Bismark Twumasi", unit:49, phone:"240310709"},
+        {name:"Victoria Yartey", unit:50, phone:"552732342"},
+        {name:"Michael Anang", unit:51, phone:"540555095"},
+        {name:"Reginald Kumah Johnson", unit:52, phone:"245593278"},
+        {name:"Prince Opoku Boampong", unit:53, phone:"244684896"},
+        {name:"John Tetteh", unit:54, phone:"547052205"},
+        {name:"Emmanuel Oppong Kojo", unit:55, phone:"546756904"},
+        {name:"Elizabeth Quartey Oyoe", unit:56, phone:"546696862"},
+        {name:"Henry Koranteng", unit:57, phone:"244082813"},
+        {name:"Nambo Michael", unit:58, phone:"550631175"}
+      ]
+    }
+  };
+
+  const billsData = {
+    "Adjei Messiah": [
+      {id:"ABNMA08351004", useType:"RP", amount:2566.60},
+      {id:"ABNMA_803418", useType:"RP", amount:2750.31},
+      {id:"ABNMA08351005", useType:"RP", amount:2923.82},
+      {id:"ABNMA08431012", useType:"RP", amount:2929.96},
+      {id:"ABNMA_237392", useType:"CP", amount:3247.88},
+      {id:"ABNMA08346036", useType:"RP", amount:3720.58},
+      {id:"ABNMA08346050", useType:"CP", amount:3743.43},
+      {id:"ABNMA08273022", useType:"CP", amount:3781.87},
+      {id:"ABNMA08346045", useType:"CP", amount:3999.53},
+      {id:"ABNMA_132063", useType:"CP", amount:5868.74}
+    ],
+    "Ali Mohammed": [
+      {id:"ABNMA08065023", useType:"RP", amount:2549.51},
+      {id:"ABNMA09101009", useType:"RP", amount:3164.29},
+      {id:"ABNMA08065015", useType:"CP", amount:3224.66},
+      {id:"ABNMA08305077", useType:"CP", amount:3458.60},
+      {id:"ABNMA08305140", useType:"CP", amount:4267.96},
+      {id:"ABNMA08099001", useType:"MX", amount:4383.97},
+      {id:"ABNMA08234021", useType:"CP", amount:4458.67},
+      {id:"ABNMA_314615", useType:"CP", amount:6419.50},
+      {id:"ABNMA08234053", useType:"CP", amount:6919.06},
+      {id:"ABNMA09032040", useType:"CP", amount:13162.67}
+    ],
+    "Felicia Gyamfi": [
+      {id:"ABNMA08444006", useType:"RP", amount:2658.94},
+      {id:"ABNMA08243031", useType:"SP", amount:2677.45},
+      {id:"ABNMA08106054", useType:"CP", amount:2757.58},
+      {id:"ABNMA08196045", useType:"RP", amount:3536.01},
+      {id:"ABNMA09199019", useType:"CP", amount:4254.43},
+      {id:"ABNMA_153473", useType:"CP", amount:4625.43},
+      {id:"ABNMA08079028", useType:"CP", amount:5721.40},
+      {id:"ABNMA08397138", useType:"SP", amount:5900.94},
+      {id:"ABNMA_714019", useType:"CP", amount:6419.50},
+      {id:"ABNMA09220002", useType:"IP", amount:17934.83}
+    ]
+  };
+
+  const SCRIPT_URL = 'YOUR_SCRIPT_URL_HERE';
+  
+  let currentSupervisor = "";
+  let currentCollector = null;
+  let formBills = [];
+  
+  // Init Landing Page
+  function initLanding() {
+    const list = document.getElementById('supervisors-list');
+    list.innerHTML = '';
+    for (const [name, data] of Object.entries(supervisorData)) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${name}</h3><p>${data.unit}</p>`;
+      card.onclick = () => selectSupervisor(name);
+      list.appendChild(card);
+    }
+    document.getElementById('date-select').valueAsDate = new Date();
+  }
+
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+  }
+
+  function selectSupervisor(name) {
+    currentSupervisor = name;
+    document.getElementById('s1-supervisor-name').innerText = name;
+    
+    const select = document.getElementById('collector-select');
+    select.innerHTML = '<option value="">-- Select Collector --</option>';
+    
+    supervisorData[name].collectors.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = JSON.stringify(c);
+      opt.innerText = `Unit ${c.unit} — ${c.name}`;
+      select.appendChild(opt);
+    });
+    
+    updateBillCount();
+    showScreen('screen-step1');
+  }
+
+  function updateBillCount() {
+    const val = document.getElementById('collector-select').value;
+    if (!val) {
+      document.getElementById('bill-count-display').innerText = '0';
+      currentCollector = null;
+      return;
+    }
+    currentCollector = JSON.parse(val);
+    const bills = billsData[currentCollector.name] || [];
+    document.getElementById('bill-count-display').innerText = bills.length;
+  }
+
+  function goToStep2() {
+    if (!currentCollector) {
+      alert("Please select a collector.");
+      return;
+    }
+    
+    document.getElementById('s2-collector-info').innerText = 
+      `Unit ${currentCollector.unit} — ${currentCollector.name}`;
+      
+    const container = document.getElementById('bills-container');
+    container.innerHTML = '';
+    
+    const bills = billsData[currentCollector.name] || [];
+    formBills = bills.map(b => ({...b, delivered: null}));
+    
+    if (bills.length === 0) {
+      container.innerHTML = '<div class="card"><p>No bills assigned yet. Bills will appear after admin uploads the bill list.</p></div>';
+    } else {
+      bills.forEach((bill, idx) => {
+        const card = document.createElement('div');
+        card.className = 'bill-card';
+        card.innerHTML = `
+          <div class="bill-header">
+            <strong>${bill.id}</strong>
+            <span class="badge">${bill.useType}</span>
+          </div>
+          <div class="bill-amount">GHS ${bill.amount.toFixed(2)}</div>
+          
+          <label>Delivered?</label>
+          <div class="delivery-buttons">
+            <button type="button" id="btn-yes-${idx}" onclick="setDelivery(${idx}, 'yes')">YES</button>
+            <button type="button" id="btn-no-${idx}" onclick="setDelivery(${idx}, 'no')">NO</button>
+          </div>
+          
+          <div id="form-yes-${idx}" class="details-form">
+            <div class="form-group">
+              <label>Ratepayer Name *</label>
+              <input type="text" id="rp-name-${idx}" onchange="updateTotals()">
+            </div>
+            <div class="form-group">
+              <label>Ratepayer Phone</label>
+              <input type="text" id="rp-phone-${idx}" onchange="updateTotals()">
+            </div>
+            <div class="form-group">
+              <label>Amount Paid (GHS) *</label>
+              <input type="number" step="0.01" id="rp-amount-${idx}" onchange="updateTotals()">
+            </div>
+            <div class="form-group">
+              <label>Mode of Payment</label>
+              <select id="rp-mode-${idx}">
+                <option value="Cash">Cash</option>
+                <option value="Mobile Money">Mobile Money</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Receipt/Ref #</label>
+              <input type="text" id="rp-receipt-${idx}">
+            </div>
+          </div>
+          
+          <div id="form-no-${idx}" class="details-form">
+            <div class="form-group">
+              <label>Reason</label>
+              <select id="rp-reason-${idx}" onchange="toggleOtherReason(${idx})">
+                <option value="Property Not Found">Property Not Found</option>
+                <option value="Ratepayer Not Around">Ratepayer Not Around</option>
+                <option value="Property Locked">Property Locked</option>
+                <option value="Ratepayer Refused">Ratepayer Refused</option>
+                <option value="Wrong Address">Wrong Address</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" id="other-reason-group-${idx}" style="display:none;">
+              <label>Other Reason *</label>
+              <input type="text" id="rp-other-${idx}">
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+    
+    updateTotals();
+    showScreen('screen-step2');
+  }
+
+  function setDelivery(idx, status) {
+    formBills[idx].delivered = status;
+    
+    document.getElementById(`btn-yes-${idx}`).classList.remove('active-yes');
+    document.getElementById(`btn-no-${idx}`).classList.remove('active-no');
+    
+    document.getElementById(`form-yes-${idx}`).classList.remove('active');
+    document.getElementById(`form-no-${idx}`).classList.remove('active');
+    
+    if (status === 'yes') {
+      document.getElementById(`btn-yes-${idx}`).classList.add('active-yes');
+      document.getElementById(`form-yes-${idx}`).classList.add('active');
+    } else {
+      document.getElementById(`btn-no-${idx}`).classList.add('active-no');
+      document.getElementById(`form-no-${idx}`).classList.add('active');
+    }
+    
+    updateTotals();
+  }
+  
+  function toggleOtherReason(idx) {
+    const val = document.getElementById(`rp-reason-${idx}`).value;
+    document.getElementById(`other-reason-group-${idx}`).style.display = (val === 'Other') ? 'block' : 'none';
+  }
+
+  function updateTotals() {
+    const total = formBills.length;
+    let delivered = 0;
+    let failed = 0;
+    let collected = 0;
+    
+    formBills.forEach((b, idx) => {
+      if (b.delivered === 'yes') {
+        delivered++;
+        const amt = parseFloat(document.getElementById(`rp-amount-${idx}`).value) || 0;
+        collected += amt;
+      } else if (b.delivered === 'no') {
+        failed++;
+      }
+    });
+    
+    document.getElementById('rt-total').innerText = total;
+    document.getElementById('rt-delivered').innerText = delivered;
+    document.getElementById('rt-failed').innerText = failed;
+    document.getElementById('rt-collected').innerText = collected.toFixed(2);
+  }
+
+  function goToStep3() {
+    // Validation
+    for (let i = 0; i < formBills.length; i++) {
+      const b = formBills[i];
+      if (!b.delivered) {
+        alert(`Please select YES or NO for bill ${b.id}`);
+        return;
+      }
+      if (b.delivered === 'yes') {
+        const name = document.getElementById(`rp-name-${i}`).value.trim();
+        const amt = document.getElementById(`rp-amount-${i}`).value;
+        if (!name || !amt) {
+          alert(`Please fill Ratepayer Name and Amount Paid for bill ${b.id}`);
+          return;
+        }
+      } else {
+        const reason = document.getElementById(`rp-reason-${i}`).value;
+        if (reason === 'Other') {
+          const other = document.getElementById(`rp-other-${i}`).value.trim();
+          if (!other) {
+            alert(`Please specify the Other reason for bill ${b.id}`);
+            return;
+          }
+        }
+      }
+    }
+    
+    // Setup summary
+    document.getElementById('sum-supervisor').innerText = currentSupervisor;
+    document.getElementById('sum-collector').innerText = currentCollector.name;
+    document.getElementById('sum-date').innerText = document.getElementById('date-select').value;
+    
+    document.getElementById('sum-total-bills').innerText = formBills.length;
+    document.getElementById('sum-delivered').innerText = document.getElementById('rt-delivered').innerText;
+    document.getElementById('sum-failed').innerText = document.getElementById('rt-failed').innerText;
+    document.getElementById('sum-collected').innerText = "GHS " + document.getElementById('rt-collected').innerText;
+    
+    showScreen('screen-step3');
+  }
+
+  function submitData() {
+    const billsPayload = formBills.map((b, i) => {
+      const payload = {
+        accountNumber: b.id,
+        useType: b.useType,
+        billAmount: b.amount,
+        delivered: b.delivered
+      };
+      if (b.delivered === 'yes') {
+        payload.ratepayerName = document.getElementById(`rp-name-${i}`).value;
+        payload.ratepayerPhone = document.getElementById(`rp-phone-${i}`).value;
+        payload.amountPaid = parseFloat(document.getElementById(`rp-amount-${i}`).value);
+        payload.modeOfPayment = document.getElementById(`rp-mode-${i}`).value;
+        payload.receiptRef = document.getElementById(`rp-receipt-${i}`).value;
+      } else {
+        payload.failureReason = document.getElementById(`rp-reason-${i}`).value;
+        if (payload.failureReason === 'Other') {
+          payload.otherReason = document.getElementById(`rp-other-${i}`).value;
+        }
+      }
+      return payload;
+    });
+
+    const dateStr = document.getElementById('date-select').value;
+    const dateObj = new Date(dateStr);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayOfWeek = days[dateObj.getDay()];
+
+    const payload = {
+      action: "submitDailyLog",
+      supervisor: currentSupervisor,
+      collector: currentCollector.name,
+      collectorUnit: currentCollector.unit,
+      collectorPhone: currentCollector.phone,
+      date: dateStr,
+      dayOfWeek: dayOfWeek,
+      submissionTime: new Date().toISOString(),
+      bills: billsPayload,
+      totalBills: formBills.length,
+      totalDelivered: parseInt(document.getElementById('rt-delivered').innerText),
+      totalFailed: parseInt(document.getElementById('rt-failed').innerText),
+      totalAmountCollected: parseFloat(document.getElementById('rt-collected').innerText)
+    };
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('loading').style.display = 'block';
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }).then(() => {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('succ-delivered').innerText = payload.totalDelivered;
+      document.getElementById('succ-collected').innerText = "GHS " + payload.totalAmountCollected.toFixed(2);
+      showScreen('screen-success');
+    }).catch(err => {
+      console.error(err);
+      alert("An error occurred while submitting.");
+      document.getElementById('loading').style.display = 'none';
+      showScreen('screen-step3');
+    });
+  }
+  
+  function resetApp() {
+    currentSupervisor = "";
+    currentCollector = null;
+    formBills = [];
+    showScreen('screen-landing');
+  }
+
+  window.onload = initLanding;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PropCollect - Research Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CDNs for Export & Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root {
+      --navy: #0a1628;
+      --gold: #FCD116;
+      --green: #006B3F;
+      --red: #CE1126;
+      --bg: #f4f7f6;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --border: #e2e8f0;
+      --sidebar-w: 250px;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* LOGIN SCREEN */
+    #login-screen {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+      width: 300px;
+    }
+    .login-box svg { width: 120px; height: 80px; margin-bottom: 20px; }
+    .login-box input {
+      width: 100%; padding: 12px; margin-bottom: 20px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 16px; text-align: center; letter-spacing: 5px;
+      box-sizing: border-box;
+    }
+    .login-box button {
+      width: 100%; padding: 12px; background: var(--green);
+      color: white; border: none; border-radius: 8px;
+      font-size: 16px; font-weight: bold; cursor: pointer;
+    }
+    
+    /* LAYOUT */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--navy);
+      color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-header svg { width: 100px; height: 60px; }
+    .sidebar-nav {
+      flex: 1;
+      padding: 20px 0;
+      overflow-y: auto;
+    }
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255,255,255,0.1);
+      border-left: 4px solid var(--gold);
+    }
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow-y: auto;
+    }
+    .topbar {
+      background: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .topbar h2 { margin: 0; color: var(--navy); }
+    .tab-content {
+      padding: 20px;
+      display: none;
+    }
+    .tab-content.active { display: block; }
+    
+    /* UTILS */
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .card {
+      background: white; border-radius: 12px; padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border);
+    }
+    .stat-value { font-size: 28px; font-weight: bold; color: var(--navy); margin-top: 10px; }
+    .stat-label { color: #666; font-size: 14px; font-weight: 600; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; font-weight: 600; color: var(--navy); }
+    tr:hover { background: #f1f5f9; }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    
+    input, select, button.btn {
+      padding: 10px; border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit; margin-right: 10px; margin-bottom: 10px;
+    }
+    button.btn {
+      background: var(--navy); color: white; border: none; cursor: pointer; font-weight: 600;
+    }
+    button.btn-green { background: var(--green); }
+    
+    .alert-box {
+      padding: 15px; border-radius: 8px; margin-bottom: 15px; font-weight: 500;
+    }
+    .alert-red { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+    .alert-yellow { background: #fef9c3; color: #854d0e; border-left: 4px solid #eab308; }
+    
+    .chart-container { position: relative; height: 300px; width: 100%; }
+    
+    /* Add basic responsiveness */
+    @media (max-width: 768px) {
+      .grid-4, .grid-2 { grid-template-columns: 1fr; }
+      body { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; }
+      .sidebar-header { display: none; }
+      .nav-item { padding: 10px; flex: none; }
+      .main-content { overflow-y: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+      <rect width="900" height="200" fill="#006B3F"/>
+      <rect y="200" width="900" height="200" fill="#FCD116"/>
+      <rect y="400" width="900" height="200" fill="#CE1126"/>
+      <polygon points="450,220 468,276 524,276 478,310 496,366 450,332 404,366 422,310 376,276 432,276" fill="#000"/>
+    </svg>
+    <h2 style="margin-top:0;">Dashboard Login</h2>
+    <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="4">
+    <button onclick="checkLogin()">LOGIN</button>
+  </div>
+</div>
+
+<!-- APP WRAPPER -->
+<div class="sidebar" id="sidebar" style="display:none;">
+  <div class="sidebar-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+      <rect width="900" height="200" fill="#006B3F"/>
+      <rect y="200" width="900" height="200" fill="#FCD116"/>
+      <rect y="400" width="900" height="200" fill="#CE1126"/>
+      <polygon points="450,220 468,276 524,276 478,310 496,366 450,332 404,366 422,310 376,276 432,276" fill="#000"/>
+    </svg>
+    <h3 style="margin: 10px 0 0 0;">PropCollect</h3>
+    <small style="color:var(--gold);">Research Panel</small>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" onclick="switchTab('overview')">📊 Overview</div>
+    <div class="nav-item" onclick="switchTab('supervisors')">👥 Supervisors</div>
+    <div class="nav-item" onclick="switchTab('collectors')">📋 Collectors</div>
+    <div class="nav-item" onclick="switchTab('bills')">📄 Bills & Reports</div>
+    <div class="nav-item" onclick="switchTab('analytics')">📈 Analytics</div>
+    <div class="nav-item" onclick="switchTab('export')">⬇ Export</div>
+    <div class="nav-item" onclick="switchTab('settings')">⚙ Settings</div>
+  </div>
+</div>
+
+<div class="main-content" id="main-content" style="display:none;">
+  <div class="topbar">
+    <h2 id="tab-title">Overview</h2>
+    <div>
+      <span style="margin-right:15px; font-size:14px; color:#666;" id="last-updated">Updating...</span>
+      <button class="btn btn-green" style="margin:0; padding:8px 15px;" onclick="forceRefresh()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- TAB 1: OVERVIEW -->
+  <div id="tab-overview" class="tab-content active">
+    <div class="grid-4" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="stat-label">Total Bills Today</div>
+        <div class="stat-value" id="ov-bills">0</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Delivered Today</div>
+        <div class="stat-value" id="ov-deliv" style="color:var(--green);">0</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Delivery Rate</div>
+        <div class="stat-value" id="ov-rate">0%</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Amount Collected</div>
+        <div class="stat-value" id="ov-amt" style="color:var(--gold);">GHS 0.00</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Active Collectors Today</div>
+        <div class="stat-value" id="ov-active">0</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Failed Deliveries</div>
+        <div class="stat-value" id="ov-failed" style="color:var(--red);">0</div>
+      </div>
+    </div>
+    
+    <div class="grid-2">
+      <div class="card">
+        <h3>Alerts & Notifications</h3>
+        <div id="alerts-container">
+          <!-- Alerts generated dynamically -->
+          <div class="alert-box alert-yellow">Loading alerts...</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Recent Activity (Last 5)</h3>
+        <div id="recent-activity">
+          <p>Loading activity...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: SUPERVISORS -->
+  <div id="tab-supervisors" class="tab-content">
+    <div class="grid-4" id="supervisors-cards">
+      <!-- Generated -->
+    </div>
+  </div>
+
+  <!-- TAB 3: COLLECTORS -->
+  <div id="tab-collectors" class="tab-content">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Collector Performance</h3>
+        <input type="text" id="coll-search" placeholder="Search Collector..." onkeyup="renderCollectorsTable()">
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="collectors-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Unit</th><th>Supervisor</th>
+              <th>Bills</th><th>Delivered</th><th>Failed</th>
+              <th>Rate %</th><th>Amount (GHS)</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: BILLS & REPORTS -->
+  <div id="tab-bills" class="tab-content">
+    <div class="card" style="margin-bottom: 20px;">
+      <h3>Filters</h3>
+      <div style="display:flex; flex-wrap:wrap;">
+        <input type="date" id="filt-date" onchange="renderBillsTable()">
+        <select id="filt-sup" onchange="renderBillsTable()">
+          <option value="">All Supervisors</option>
+          <option>Felix Abevi Vifah</option>
+          <option>Linda Arthur</option>
+          <option>Afua Tenkorang</option>
+        </select>
+        <select id="filt-deliv" onchange="renderBillsTable()">
+          <option value="">All Deliveries</option>
+          <option value="yes">Delivered</option>
+          <option value="no">Failed</option>
+        </select>
+        <input type="text" id="filt-search" placeholder="Search Acc# or Name..." onkeyup="renderBillsTable()">
+        <button class="btn" onclick="clearFilters()">Clear</button>
+      </div>
+    </div>
+    
+    <div class="card" style="overflow-x:auto;">
+      <table id="bills-table">
+        <thead>
+          <tr>
+            <th>Date</th><th>Supervisor</th><th>Collector</th>
+            <th>Acc #</th><th>Type</th><th>Bill Amt</th>
+            <th>Status</th><th>Ratepayer</th><th>Paid</th>
+            <th>Mode</th><th>Reason (If Failed)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 5: ANALYTICS -->
+  <div id="tab-analytics" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Delivery Rate by Supervisor</h3>
+        <div class="chart-container"><canvas id="chart-sup-rate"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Daily Collection Trend (Last 7 Days)</h3>
+        <div class="chart-container"><canvas id="chart-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Payment Modes Breakdown</h3>
+        <div class="chart-container"><canvas id="chart-modes"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Use Types Breakdown</h3>
+        <div class="chart-container"><canvas id="chart-types"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: EXPORT -->
+  <div id="tab-export" class="tab-content">
+    <div class="card" style="max-width: 500px;">
+      <h3>Export Data</h3>
+      <p>Select date range or leave blank for all time.</p>
+      <input type="date" id="export-start" title="Start Date">
+      <input type="date" id="export-end" title="End Date">
+      <select id="export-sup">
+        <option value="">All Supervisors</option>
+        <option>Felix Abevi Vifah</option>
+        <option>Linda Arthur</option>
+        <option>Afua Tenkorang</option>
+      </select>
+      
+      <div style="margin-top:20px; display:flex; gap:10px;">
+        <button class="btn btn-green" onclick="exportData('csv')">Download CSV</button>
+        <button class="btn btn-green" onclick="exportData('excel')">Download Excel</button>
+        <button class="btn" onclick="exportData('pdf')">Download PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 7: SETTINGS -->
+  <div id="tab-settings" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Dashboard PIN</h3>
+        <input type="password" id="new-pin" placeholder="New PIN" maxlength="4">
+        <button class="btn" onclick="alert('PIN changed locally (demo).')">Update PIN</button>
+      </div>
+      <div class="card">
+        <h3>System Status</h3>
+        <p>API Endpoint: <span style="color:var(--green)">Connected</span></p>
+        <p>Cache: <span id="cache-size">0 KB</span></p>
+        <button class="btn" onclick="localStorage.clear(); alert('Cache cleared. Reloading...'); location.reload();">Clear Cache</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // --- GLOBALS & MOCKS ---
+  const SCRIPT_URL = 'YOUR_SCRIPT_URL_HERE';
+  let allLogs = [];
+  let charts = {};
+  
+  // JSONP Fetch Wrapper
+  function fetchData(action, callback) {
+    var script = document.createElement('script');
+    var cbName = '_cb_' + Date.now();
+    var called = false;
+    window[cbName] = function(data) {
+      if (called) return;
+      called = true;
+      callback(data);
+      if (document.body.contains(script)) document.body.removeChild(script);
+      delete window[cbName];
+    };
+    // For demo purposes if SCRIPT_URL is placeholder, fallback to empty data
+    if (SCRIPT_URL.includes('YOUR_SCRIPT_URL_HERE')) {
+      setTimeout(() => window[cbName]({logs: generateMockData()}), 500);
+      return;
+    }
+    script.src = SCRIPT_URL + '?action=' + action + '&callback=' + cbName;
+    script.onerror = function() {
+      if (!called) window[cbName]({status:'error'});
+    };
+    document.body.appendChild(script);
+    setTimeout(function() {
+      if (!called) window[cbName]({status:'timeout'});
+    }, 8000);
+  }
+
+  // --- INIT & AUTH ---
+  function checkLogin() {
+    const pin = document.getElementById('pin-input').value;
+    if (pin === '2500') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('sidebar').style.display = 'flex';
+      document.getElementById('main-content').style.display = 'flex';
+      loadData();
+      setInterval(loadData, 60000); // Auto refresh 60s
+    } else {
+      alert('Invalid PIN');
+    }
+  }
+
+  function loadData() {
+    const cached = localStorage.getItem('propcollect_data');
+    if (cached) {
+      allLogs = JSON.parse(cached);
+      renderAll();
+    }
+    
+    document.getElementById('last-updated').innerText = 'Fetching...';
+    fetchData('getDailyLogs', function(data) {
+      if (data.logs) {
+        allLogs = data.logs;
+        localStorage.setItem('propcollect_data', JSON.stringify(allLogs));
+        renderAll();
+      }
+      document.getElementById('last-updated').innerText = 'Last updated: ' + new Date().toLocaleTimeString();
+      document.getElementById('cache-size').innerText = 
+        (localStorage.getItem('propcollect_data') || '').length / 1024 | 0 + ' KB';
+    });
+  }
+  
+  function forceRefresh() {
+    loadData();
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+    
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    event.currentTarget.classList.add('active');
+    
+    const titles = {
+      'overview': 'Overview', 'supervisors': 'Supervisors', 'collectors': 'Collectors',
+      'bills': 'Bills & Reports', 'analytics': 'Analytics', 'export': 'Export', 'settings': 'Settings'
+    };
+    document.getElementById('tab-title').innerText = titles[tabId];
+    
+    if (tabId === 'analytics') renderCharts();
+  }
+
+  // --- RENDER LOGIC ---
+  function renderAll() {
+    renderOverview();
+    renderSupervisors();
+    renderCollectorsTable();
+    renderBillsTable();
+    if (document.getElementById('tab-analytics').classList.contains('active')) {
+      renderCharts();
+    }
+  }
+
+  function renderOverview() {
+    let today = new Date().toISOString().split('T')[0];
+    let tBills=0, tDeliv=0, tAmt=0, tFailed=0;
+    let activeSet = new Set();
+    
+    let recent = [];
+    
+    allLogs.forEach(log => {
+      // Aggregate today's stats
+      if (log.date === today) {
+        tBills += log.totalBills || 0;
+        tDeliv += log.totalDelivered || 0;
+        tFailed += log.totalFailed || 0;
+        tAmt += log.totalAmountCollected || 0;
+        activeSet.add(log.collector);
+      }
+      recent.push(log);
+    });
+    
+    let rate = tBills > 0 ? ((tDeliv/tBills)*100).toFixed(1) : 0;
+    
+    document.getElementById('ov-bills').innerText = tBills;
+    document.getElementById('ov-deliv').innerText = tDeliv;
+    document.getElementById('ov-rate').innerText = rate + '%';
+    document.getElementById('ov-amt').innerText = 'GHS ' + tAmt.toFixed(2);
+    document.getElementById('ov-active').innerText = activeSet.size;
+    document.getElementById('ov-failed').innerText = tFailed;
+    
+    // Alerts
+    let alertsHtml = '';
+    const sups = ['Felix Abevi Vifah', 'Linda Arthur', 'Afua Tenkorang'];
+    let supsReported = new Set(allLogs.filter(l => l.date === today).map(l => l.supervisor));
+    
+    sups.forEach(s => {
+      if (!supsReported.has(s)) {
+        alertsHtml += `<div class="alert-box alert-red">🔴 ${s} has NO reports today.</div>`;
+      }
+    });
+    
+    if (rate < 50 && tBills > 0) {
+      alertsHtml += `<div class="alert-box alert-yellow">🟡 Overall delivery rate is below 50% today.</div>`;
+    }
+    
+    if (alertsHtml === '') alertsHtml = `<div class="alert-box" style="background:#dcfce7; color:#166534; border-left:4px solid #16a34a;">🟢 All metrics looking good today!</div>`;
+    document.getElementById('alerts-container').innerHTML = alertsHtml;
+    
+    // Recent
+    recent.sort((a,b) => new Date(b.submissionTime) - new Date(a.submissionTime));
+    let rHtml = '';
+    recent.slice(0,5).forEach(r => {
+      rHtml += `<div style="padding:10px 0; border-bottom:1px solid #eee;">
+        <strong>${r.collector}</strong> submitted ${r.totalBills} bills 
+        <span class="badge badge-green">GHS ${r.totalAmountCollected}</span>
+        <br><small style="color:#666;">${new Date(r.submissionTime).toLocaleString()}</small>
+      </div>`;
+    });
+    document.getElementById('recent-activity').innerHTML = rHtml || '<p>No activity yet.</p>';
+  }
+
+  function renderSupervisors() {
+    const sups = {
+      'Felix Abevi Vifah': {unit: 'Units 1-21', expected: 21},
+      'Linda Arthur': {unit: 'Units 22-42', expected: 21},
+      'Afua Tenkorang': {unit: 'Units 43-58', expected: 16}
+    };
+    
+    let html = '';
+    for (let s in sups) {
+      // Calculate stats for all time
+      let logs = allLogs.filter(l => l.supervisor === s);
+      let bills=0, deliv=0, amt=0;
+      let colls = new Set();
+      
+      logs.forEach(l => {
+        bills += l.totalBills || 0;
+        deliv += l.totalDelivered || 0;
+        amt += l.totalAmountCollected || 0;
+        colls.add(l.collector);
+      });
+      
+      let rate = bills > 0 ? Math.round((deliv/bills)*100) : 0;
+      let status = rate >= 70 ? '🟢' : rate >= 40 ? '🟡' : '🔴';
+      
+      html += `
+        <div class="card">
+          <h3 style="margin-top:0;">${s}</h3>
+          <p style="color:#666; margin-bottom:15px;">${sups[s].unit}</p>
+          <p><strong>Collectors Active:</strong> ${colls.size} / ${sups[s].expected}</p>
+          <p><strong>Total Bills:</strong> ${bills}</p>
+          <p><strong>Delivery Rate:</strong> ${rate}%</p>
+          <p><strong>Collected:</strong> GHS ${amt.toFixed(2)}</p>
+          <div style="font-size:24px; text-align:right;">${status}</div>
+        </div>
+      `;
+    }
+    document.getElementById('supervisors-cards').innerHTML = html;
+  }
+
+  function renderCollectorsTable() {
+    const search = document.getElementById('coll-search').value.toLowerCase();
+    
+    // Aggregate by collector
+    let cMap = {};
+    allLogs.forEach(l => {
+      if (!cMap[l.collector]) {
+        cMap[l.collector] = {
+          name: l.collector, unit: l.collectorUnit, sup: l.supervisor,
+          bills:0, deliv:0, failed:0, amt:0, last: l.submissionTime
+        };
+      }
+      let c = cMap[l.collector];
+      c.bills += l.totalBills || 0;
+      c.deliv += l.totalDelivered || 0;
+      c.failed += l.totalFailed || 0;
+      c.amt += l.totalAmountCollected || 0;
+      if (new Date(l.submissionTime) > new Date(c.last)) c.last = l.submissionTime;
+    });
+    
+    let arr = Object.values(cMap);
+    if (search) arr = arr.filter(c => c.name.toLowerCase().includes(search) || c.sup.toLowerCase().includes(search));
+    
+    arr.sort((a,b) => b.amt - a.amt); // sort by amount desc
+    
+    let html = '';
+    arr.forEach(c => {
+      let rate = c.bills > 0 ? Math.round((c.deliv/c.bills)*100) : 0;
+      let status = rate >= 70 ? '<span class="badge badge-green">Good</span>' : 
+                   rate >= 40 ? '<span class="badge badge-yellow">Fair</span>' : 
+                   '<span class="badge badge-red">Poor</span>';
+                   
+      html += `<tr>
+        <td><strong>${c.name}</strong></td><td>Unit ${c.unit}</td><td>${c.sup}</td>
+        <td>${c.bills}</td><td>${c.deliv}</td><td>${c.failed}</td>
+        <td>${rate}%</td><td>GHS ${c.amt.toFixed(2)}</td>
+        <td><small>${new Date(c.last).toLocaleDateString()}</small></td>
+        <td>${status}</td>
+      </tr>`;
+    });
+    document.querySelector('#collectors-table tbody').innerHTML = html || '<tr><td colspan="10">No data found</td></tr>';
+  }
+
+  function renderBillsTable() {
+    const fDate = document.getElementById('filt-date').value;
+    const fSup = document.getElementById('filt-sup').value;
+    const fDeliv = document.getElementById('filt-deliv').value;
+    const fSearch = document.getElementById('filt-search').value.toLowerCase();
+    
+    let rows = [];
+    allLogs.forEach(log => {
+      if (fDate && log.date !== fDate) return;
+      if (fSup && log.supervisor !== fSup) return;
+      
+      if (log.bills && Array.isArray(log.bills)) {
+        log.bills.forEach(b => {
+          if (fDeliv && b.delivered !== fDeliv) return;
+          if (fSearch && !b.accountNumber.toLowerCase().includes(fSearch) && 
+              !(b.ratepayerName && b.ratepayerName.toLowerCase().includes(fSearch))) return;
+          
+          rows.push({
+            date: log.date, sup: log.supervisor, coll: log.collector,
+            ...b
+          });
+        });
+      }
+    });
+    
+    rows.sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    let html = '';
+    rows.slice(0, 100).forEach(r => { // limit 100 for perf in dom
+      let stat = r.delivered === 'yes' ? '<span class="badge badge-green">Delivered</span>' : '<span class="badge badge-red">Failed</span>';
+      html += `<tr>
+        <td>${r.date}</td><td>${r.sup}</td><td>${r.coll}</td>
+        <td><strong>${r.accountNumber}</strong></td><td>${r.useType}</td><td>${r.billAmount}</td>
+        <td>${stat}</td><td>${r.ratepayerName || '-'}</td>
+        <td>${r.amountPaid ? 'GHS '+r.amountPaid : '-'}</td>
+        <td>${r.modeOfPayment || '-'}</td>
+        <td>${r.failureReason || r.otherReason || '-'}</td>
+      </tr>`;
+    });
+    document.querySelector('#bills-table tbody').innerHTML = html || '<tr><td colspan="11">No bills found</td></tr>';
+  }
+  
+  function clearFilters() {
+    document.getElementById('filt-date').value = '';
+    document.getElementById('filt-sup').value = '';
+    document.getElementById('filt-deliv').value = '';
+    document.getElementById('filt-search').value = '';
+    renderBillsTable();
+  }
+
+  // --- ANALYTICS CHARTS ---
+  function renderCharts() {
+    if (!window.Chart) return;
+    
+    // Data prep
+    let supStats = {'Felix Abevi Vifah':{b:0,d:0}, 'Linda Arthur':{b:0,d:0}, 'Afua Tenkorang':{b:0,d:0}};
+    let trendMap = {};
+    let modes = {};
+    let types = {};
+    
+    allLogs.forEach(l => {
+      if(supStats[l.supervisor]) {
+        supStats[l.supervisor].b += l.totalBills||0;
+        supStats[l.supervisor].d += l.totalDelivered||0;
+      }
+      
+      let d = l.date;
+      if(!trendMap[d]) trendMap[d] = 0;
+      trendMap[d] += l.totalAmountCollected||0;
+      
+      if(l.bills) {
+        l.bills.forEach(b => {
+          if(b.modeOfPayment) {
+            modes[b.modeOfPayment] = (modes[b.modeOfPayment]||0) + (b.amountPaid||0);
+          }
+          if(b.useType) {
+            types[b.useType] = (types[b.useType]||0) + 1;
+          }
+        });
+      }
+    });
+
+    // 1. Sup Rate Bar
+    let srCtx = document.getElementById('chart-sup-rate').getContext('2d');
+    if(charts.sr) charts.sr.destroy();
+    charts.sr = new Chart(srCtx, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(supStats),
+        datasets: [{
+          label: 'Delivery Rate %',
+          data: Object.values(supStats).map(v => v.b>0 ? Math.round((v.d/v.b)*100) : 0),
+          backgroundColor: '#0a1628'
+        }]
+      }
+    });
+
+    // 2. Trend Line
+    let tCtx = document.getElementById('chart-trend').getContext('2d');
+    if(charts.tr) charts.tr.destroy();
+    
+    let tKeys = Object.keys(trendMap).sort().slice(-7); // last 7 days
+    let tVals = tKeys.map(k => trendMap[k]);
+    
+    charts.tr = new Chart(tCtx, {
+      type: 'line',
+      data: {
+        labels: tKeys,
+        datasets: [{
+          label: 'Amount Collected (GHS)',
+          data: tVals,
+          borderColor: '#006B3F',
+          tension: 0.1,
+          fill: true,
+          backgroundColor: 'rgba(0,107,63,0.1)'
+        }]
+      }
+    });
+
+    // 3. Modes Donut
+    let mCtx = document.getElementById('chart-modes').getContext('2d');
+    if(charts.mo) charts.mo.destroy();
+    charts.mo = new Chart(mCtx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(modes),
+        datasets: [{
+          data: Object.values(modes),
+          backgroundColor: ['#006B3F', '#FCD116', '#CE1126', '#0a1628']
+        }]
+      }
+    });
+
+    // 4. Types Donut
+    let tyCtx = document.getElementById('chart-types').getContext('2d');
+    if(charts.ty) charts.ty.destroy();
+    charts.ty = new Chart(tyCtx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(types),
+        datasets: [{
+          data: Object.values(types),
+          backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#14b8a6']
+        }]
+      }
+    });
+  }
+
+  // --- EXPORT ---
+  function exportData(format) {
+    const start = document.getElementById('export-start').value;
+    const end = document.getElementById('export-end').value;
+    const sup = document.getElementById('export-sup').value;
+    
+    let flatData = [];
+    allLogs.forEach(l => {
+      if (start && l.date < start) return;
+      if (end && l.date > end) return;
+      if (sup && l.supervisor !== sup) return;
+      
+      if(l.bills) {
+        l.bills.forEach(b => {
+          flatData.push({
+            Date: l.date,
+            Supervisor: l.supervisor,
+            Collector: l.collector,
+            Unit: l.collectorUnit,
+            AccountNumber: b.accountNumber,
+            UseType: b.useType,
+            BillAmount: b.billAmount,
+            Delivered: b.delivered,
+            RatepayerName: b.ratepayerName || '',
+            AmountPaid: b.amountPaid || 0,
+            ModeOfPayment: b.modeOfPayment || '',
+            ReceiptRef: b.receiptRef || '',
+            FailureReason: b.failureReason || b.otherReason || ''
+          });
+        });
+      }
+    });
+    
+    if(flatData.length === 0) {
+      alert("No data found for selected filters.");
+      return;
+    }
+
+    if (format === 'csv' || format === 'excel') {
+      const ws = XLSX.utils.json_to_sheet(flatData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "PropCollect Data");
+      
+      if (format === 'csv') {
+        XLSX.writeFile(wb, "PropCollect_Export.csv");
+      } else {
+        XLSX.writeFile(wb, "PropCollect_Export.xlsx");
+      }
+    } else if (format === 'pdf') {
+      const doc = new jspdf.jsPDF('landscape');
+      doc.text("PropCollect Data Export", 14, 15);
+      
+      const columns = Object.keys(flatData[0]);
+      const rows = flatData.map(obj => Object.values(obj).map(v => String(v)));
+      
+      doc.autoTable({
+        head: [columns],
+        body: rows,
+        startY: 20,
+        styles: { fontSize: 8 }
+      });
+      doc.save('PropCollect_Export.pdf');
+    }
+  }
+
+  // --- MOCK DATA GENERATOR (For demo) ---
+  function generateMockData() {
+    let logs = [];
+    const date = new Date().toISOString().split('T')[0];
+    logs.push({
+      date: date, supervisor: 'Felix Abevi Vifah', collector: 'Adjei Messiah', collectorUnit: 1,
+      submissionTime: new Date().toISOString(), totalBills: 10, totalDelivered: 8, totalFailed: 2, totalAmountCollected: 5000,
+      bills: [
+        {accountNumber:'ABNMA08351004', useType:'RP', billAmount:2566.6, delivered:'yes', ratepayerName:'Kofi Mensah', amountPaid:2566.6, modeOfPayment:'Cash'},
+        {accountNumber:'ABNMA_803418', useType:'RP', billAmount:2750.31, delivered:'no', failureReason:'Property Locked'}
+      ]
+    });
+    logs.push({
+      date: date, supervisor: 'Linda Arthur', collector: 'Prince Opoku', collectorUnit: 22,
+      submissionTime: new Date(Date.now() - 3600000).toISOString(), totalBills: 15, totalDelivered: 15, totalFailed: 0, totalAmountCollected: 12000,
+      bills: [
+        {accountNumber:'ABNMA123', useType:'CP', billAmount:12000, delivered:'yes', ratepayerName:'Tech Corp', amountPaid:12000, modeOfPayment:'Bank Transfer'}
+      ]
+    });
+    return logs;
+  }
+</script>
+
+</body>
+</html>
