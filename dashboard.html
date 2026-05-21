@@ -172,16 +172,47 @@
 
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-box">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <div style="text-align:center; margin-bottom: 20px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" style="width: 150px; height: 100px;">
       <rect width="900" height="200" fill="#006B3F"/>
       <rect y="200" width="900" height="200" fill="#FCD116"/>
       <rect y="400" width="900" height="200" fill="#CE1126"/>
       <polygon points="450,220 468,276 524,276 478,310 496,366 450,332 404,366 422,310 376,276 432,276" fill="#000"/>
     </svg>
-    <h2 style="margin-top:0;">Dashboard Login</h2>
+    <h2 style="color:white; margin: 10px 0;">PropCollect</h2>
+  </div>
+  
+  <!-- Role Selection -->
+  <div id="role-selection" style="display:flex; gap:20px; max-width:600px; width:100%; padding:0 20px; box-sizing:border-box;">
+    <!-- Supervisor Card -->
+    <div class="card" style="background:#006B3F; color:white; flex:1; text-align:center; cursor:pointer;" onclick="showLogin('supervisor')">
+      <div style="font-size:40px; margin-bottom:10px;">👥</div>
+      <h3 style="margin:0; color:white;">Supervisor Login</h3>
+      <p style="margin:5px 0 0 0; font-size:14px; color:rgba(255,255,255,0.8);">Access your unit data</p>
+    </div>
+    
+    <!-- Research Card -->
+    <div class="card" style="background:#0a1628; border: 2px solid #FCD116; color:white; flex:1; text-align:center; cursor:pointer;" onclick="showLogin('research')">
+      <div style="font-size:40px; margin-bottom:10px;">🔬</div>
+      <h3 style="margin:0; color:white;">Research Team</h3>
+      <p style="margin:5px 0 0 0; font-size:14px; color:rgba(255,255,255,0.8);">Full system access</p>
+    </div>
+  </div>
+
+  <!-- Login Form -->
+  <div id="login-form-container" class="login-box" style="display:none;">
+    <button style="background:none; border:none; color:var(--navy); font-size:24px; cursor:pointer; float:left; margin:-10px 0 0 -10px;" onclick="backToRoles()">←</button>
+    <h2 style="margin-top:0; clear:both;" id="login-title">Login</h2>
+    
+    <select id="sup-name-select" style="display:none; margin-bottom:20px; width:100%;">
+      <option value="">-- Select Your Name --</option>
+      <option>Felix Abevi Vifah</option>
+      <option>Linda Arthur</option>
+      <option>Afua Tenkorang</option>
+    </select>
+    
     <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="4">
-    <button onclick="checkLogin()">LOGIN</button>
+    <button onclick="checkLogin()">Login</button>
   </div>
 </div>
 
@@ -198,22 +229,26 @@
     <small style="color:var(--gold);">Research Panel</small>
   </div>
   <div class="sidebar-nav">
-    <div class="nav-item active" onclick="switchTab('overview')">📊 Overview</div>
-    <div class="nav-item" onclick="switchTab('supervisors')">👥 Supervisors</div>
-    <div class="nav-item" onclick="switchTab('collectors')">📋 Collectors</div>
-    <div class="nav-item" onclick="switchTab('bills')">📄 Bills & Reports</div>
-    <div class="nav-item" onclick="switchTab('analytics')">📈 Analytics</div>
-    <div class="nav-item" onclick="switchTab('export')">⬇ Export</div>
-    <div class="nav-item" onclick="switchTab('settings')">⚙ Settings</div>
+    <div class="nav-item active" id="nav-overview" onclick="switchTab('overview')">📊 Overview</div>
+    <div class="nav-item" id="nav-supervisors" onclick="switchTab('supervisors')">👥 Supervisors</div>
+    <div class="nav-item" id="nav-collectors" onclick="switchTab('collectors')">📋 Collectors</div>
+    <div class="nav-item" id="nav-bills" onclick="switchTab('bills')">📄 Bills & Reports</div>
+    <div class="nav-item" id="nav-analytics" onclick="switchTab('analytics')">📈 Analytics</div>
+    <div class="nav-item" id="nav-export" onclick="switchTab('export')">⬇ Export</div>
+    <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">⚙ Settings</div>
   </div>
 </div>
 
 <div class="main-content" id="main-content" style="display:none;">
   <div class="topbar">
-    <h2 id="tab-title">Overview</h2>
+    <div>
+      <h2 id="tab-title" style="display:inline-block; margin:0; margin-right:15px; padding-right:15px; border-right:2px solid var(--border);">Overview</h2>
+      <span id="user-header-title" style="color:var(--navy); font-weight:600;"></span>
+    </div>
     <div>
       <span style="margin-right:15px; font-size:14px; color:#666;" id="last-updated">Updating...</span>
       <button class="btn btn-green" style="margin:0; padding:8px 15px;" onclick="forceRefresh()">↻ Refresh</button>
+      <button class="btn" style="margin:0 0 0 10px; padding:8px 15px; background:var(--red);" onclick="logout()">Logout</button>
     </div>
   </div>
 
@@ -426,18 +461,97 @@
   }
 
   // --- INIT & AUTH ---
+  let currentUserRole = null;
+  let currentUserName = null;
+
+  function showLogin(role) {
+    document.getElementById('role-selection').style.display = 'none';
+    document.getElementById('login-form-container').style.display = 'block';
+    
+    if (role === 'supervisor') {
+      document.getElementById('login-title').innerText = "Supervisor Login";
+      document.getElementById('sup-name-select').style.display = 'block';
+      currentUserRole = 'supervisor';
+    } else {
+      document.getElementById('login-title').innerText = "Research Team";
+      document.getElementById('sup-name-select').style.display = 'none';
+      currentUserRole = 'researcher';
+    }
+    document.getElementById('pin-input').value = '';
+  }
+
+  function backToRoles() {
+    document.getElementById('login-form-container').style.display = 'none';
+    document.getElementById('role-selection').style.display = 'flex';
+  }
+
   function checkLogin() {
     const pin = document.getElementById('pin-input').value;
-    if (pin === '2500') {
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('sidebar').style.display = 'flex';
-      document.getElementById('main-content').style.display = 'flex';
-      loadData();
-      setInterval(loadData, 60000); // Auto refresh 60s
+    let valid = false;
+    
+    if (currentUserRole === 'supervisor') {
+      const name = document.getElementById('sup-name-select').value;
+      if (!name) { alert("Please select your name."); return; }
+      
+      const pins = {'Felix Abevi Vifah':'1111', 'Linda Arthur':'2222', 'Afua Tenkorang':'3333'};
+      if (pin === pins[name]) {
+        valid = true;
+        currentUserName = name;
+      }
+    } else if (currentUserRole === 'researcher') {
+      if (pin === '2500') {
+        valid = true;
+        currentUserName = 'Research Team';
+      }
+    }
+    
+    if (valid) {
+      sessionStorage.setItem('propcollect_role', currentUserRole);
+      sessionStorage.setItem('propcollect_name', currentUserName);
+      proceedToApp();
     } else {
       alert('Invalid PIN');
     }
   }
+
+  function logout() {
+    sessionStorage.clear();
+    location.reload();
+  }
+
+  function proceedToApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('sidebar').style.display = 'flex';
+    document.getElementById('main-content').style.display = 'flex';
+    
+    if (currentUserRole === 'supervisor') {
+      document.getElementById('user-header-title').innerText = `${currentUserName} | Supervisor`;
+      document.getElementById('nav-supervisors').style.display = 'none';
+      document.getElementById('nav-analytics').style.display = 'none';
+      document.getElementById('nav-settings').style.display = 'none';
+      
+      document.getElementById('nav-overview').innerHTML = '📊 My Overview';
+      document.getElementById('nav-collectors').innerHTML = '📋 My Collectors';
+      document.getElementById('nav-bills').innerHTML = '📄 My Reports';
+    } else {
+      document.getElementById('user-header-title').innerText = `Research Team | Full Access`;
+    }
+    
+    loadData();
+    if (!window.refreshInterval) {
+      window.refreshInterval = setInterval(loadData, 60000);
+    }
+  }
+
+  window.onload = function() {
+    const role = sessionStorage.getItem('propcollect_role');
+    const name = sessionStorage.getItem('propcollect_name');
+    if (role && name) {
+      currentUserRole = role;
+      currentUserName = name;
+      proceedToApp();
+    }
+  };
 
   function loadData() {
     const cached = localStorage.getItem('propcollect_data');
@@ -479,6 +593,13 @@
     if (tabId === 'analytics') renderCharts();
   }
 
+  function getFilteredLogs() {
+    if (currentUserRole === 'supervisor') {
+      return allLogs.filter(l => l.supervisor === currentUserName);
+    }
+    return allLogs;
+  }
+
   // --- RENDER LOGIC ---
   function renderAll() {
     renderOverview();
@@ -497,7 +618,7 @@
     
     let recent = [];
     
-    allLogs.forEach(log => {
+    getFilteredLogs().forEach(log => {
       // Aggregate today's stats
       if (log.date === today) {
         tBills += log.totalBills || 0;
@@ -520,14 +641,18 @@
     
     // Alerts
     let alertsHtml = '';
-    const sups = ['Felix Abevi Vifah', 'Linda Arthur', 'Afua Tenkorang'];
-    let supsReported = new Set(allLogs.filter(l => l.date === today).map(l => l.supervisor));
+    const filteredLogs = getFilteredLogs();
     
-    sups.forEach(s => {
-      if (!supsReported.has(s)) {
-        alertsHtml += `<div class="alert-box alert-red">🔴 ${s} has NO reports today.</div>`;
-      }
-    });
+    if (currentUserRole === 'researcher') {
+      const sups = ['Felix Abevi Vifah', 'Linda Arthur', 'Afua Tenkorang'];
+      let supsReported = new Set(filteredLogs.filter(l => l.date === today).map(l => l.supervisor));
+      
+      sups.forEach(s => {
+        if (!supsReported.has(s)) {
+          alertsHtml += `<div class="alert-box alert-red">🔴 ${s} has NO reports today.</div>`;
+        }
+      });
+    }
     
     if (rate < 50 && tBills > 0) {
       alertsHtml += `<div class="alert-box alert-yellow">🟡 Overall delivery rate is below 50% today.</div>`;
@@ -559,7 +684,7 @@
     let html = '';
     for (let s in sups) {
       // Calculate stats for all time
-      let logs = allLogs.filter(l => l.supervisor === s);
+      let logs = getFilteredLogs().filter(l => l.supervisor === s);
       let bills=0, deliv=0, amt=0;
       let colls = new Set();
       
@@ -593,7 +718,7 @@
     
     // Aggregate by collector
     let cMap = {};
-    allLogs.forEach(l => {
+    getFilteredLogs().forEach(l => {
       if (!cMap[l.collector]) {
         cMap[l.collector] = {
           name: l.collector, unit: l.collectorUnit, sup: l.supervisor,
@@ -638,7 +763,7 @@
     const fSearch = document.getElementById('filt-search').value.toLowerCase();
     
     let rows = [];
-    allLogs.forEach(log => {
+    getFilteredLogs().forEach(log => {
       if (fDate && log.date !== fDate) return;
       if (fSup && log.supervisor !== fSup) return;
       
@@ -691,7 +816,7 @@
     let modes = {};
     let types = {};
     
-    allLogs.forEach(l => {
+    getFilteredLogs().forEach(l => {
       if(supStats[l.supervisor]) {
         supStats[l.supervisor].b += l.totalBills||0;
         supStats[l.supervisor].d += l.totalDelivered||0;
@@ -786,7 +911,7 @@
     const sup = document.getElementById('export-sup').value;
     
     let flatData = [];
-    allLogs.forEach(l => {
+    getFilteredLogs().forEach(l => {
       if (start && l.date < start) return;
       if (end && l.date > end) return;
       if (sup && l.supervisor !== sup) return;
