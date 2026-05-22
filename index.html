@@ -875,8 +875,6 @@
     if (!q) return;
     
     let foundBill = null;
-    let foundCollector = currentCollector.name;
-    let foundSupervisor = currentSupervisor;
     
     const bills = window.state.bills || [];
     const match = bills.find(b => (b.accountNumber || '').toLowerCase() === q);
@@ -885,19 +883,11 @@
     }
     
     const resDiv = document.getElementById('search-result');
+    resDiv.innerHTML = ''; // Clear search results when a new search is done
     resDiv.style.display = 'block';
     
     if (foundBill) {
-      const accNo = foundBill.accountNumber || 'N/A';
-      const currentBill = parseFloat(foundBill.currentBill || 0).toFixed(2);
-      resDiv.innerHTML = `
-        <p><strong>Account Number:</strong> ${accNo}</p>
-        <p><strong>Assigned Collector:</strong> ${foundCollector}</p>
-        <p><strong>Supervisor:</strong> ${foundSupervisor}</p>
-        <p><strong>Bill Amount:</strong> GHS ${currentBill}</p>
-        <p><strong>Use Type:</strong> <span class="badge">${foundBill.rateType || 'BOP'}</span></p>
-        <button class="btn btn-green" onclick='addBillToForm(${JSON.stringify(foundBill)})'>Fill Details</button>
-      `;
+      addBillToUI(foundBill, resDiv);
     } else {
       resDiv.innerHTML = `
         <p style="color:var(--red); font-weight:bold;">Bill not found in system</p>
@@ -949,12 +939,12 @@
     addBillToForm({ accountNumber: acct, currentBill: amt, rateType: use });
   }
 
-  function addBillToUI(bill) {
+  function addBillToUI(bill, targetContainer) {
     const idx = formBills.length;
     const newBillObj = {...bill, delivered: null, submitted: false};
     formBills.push(newBillObj);
     
-    const container = document.getElementById('bills-container');
+    const container = targetContainer || document.getElementById('bills-container');
     const noMsg = document.getElementById('no-bills-msg');
     if (noMsg) noMsg.remove();
     
