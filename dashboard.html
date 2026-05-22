@@ -206,9 +206,9 @@
     
     <select id="sup-name-select" style="display:none; margin-bottom:20px; width:100%;">
       <option value="">-- Select Your Name --</option>
-      <option>Felix Abevi Vifah</option>
-      <option>Linda Arthur</option>
       <option>Afua Tenkorang</option>
+      <option>Abevi Felix Vifah</option>
+      <option>Linda Arthur</option>
     </select>
     
     <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="4">
@@ -336,9 +336,9 @@
         <input type="date" id="filt-date" onchange="renderBillsTable()">
         <select id="filt-sup" onchange="renderBillsTable()">
           <option value="">All Supervisors</option>
-          <option>Felix Abevi Vifah</option>
-          <option>Linda Arthur</option>
           <option>Afua Tenkorang</option>
+          <option>Abevi Felix Vifah</option>
+          <option>Linda Arthur</option>
         </select>
         <select id="filt-deliv" onchange="renderBillsTable()">
           <option value="">All Deliveries</option>
@@ -396,9 +396,9 @@
       <input type="date" id="export-end" title="End Date">
       <select id="export-sup">
         <option value="">All Supervisors</option>
-        <option>Felix Abevi Vifah</option>
-        <option>Linda Arthur</option>
         <option>Afua Tenkorang</option>
+        <option>Abevi Felix Vifah</option>
+        <option>Linda Arthur</option>
       </select>
       
       <div style="margin-top:20px; display:flex; gap:10px;">
@@ -428,16 +428,16 @@
     <div class="card" style="margin-top:20px; max-width:500px;">
       <h3>Supervisor Contacts</h3>
       <div class="form-group" style="margin-bottom:15px;">
-        <label style="display:block; margin-bottom:5px; font-weight:600;">Felix Abevi Vifah</label>
-        <input type="text" id="phone-felix" placeholder="e.g. 0244123456" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+        <label style="display:block; margin-bottom:5px; font-weight:600;">Afua Tenkorang</label>
+        <input type="text" id="phone-afua" value="0542666867" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+      </div>
+      <div class="form-group" style="margin-bottom:15px;">
+        <label style="display:block; margin-bottom:5px; font-weight:600;">Abevi Felix Vifah</label>
+        <input type="text" id="phone-abevi" value="0551440416" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
       </div>
       <div class="form-group" style="margin-bottom:15px;">
         <label style="display:block; margin-bottom:5px; font-weight:600;">Linda Arthur</label>
-        <input type="text" id="phone-linda" placeholder="e.g. 0244123456" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-      <div class="form-group" style="margin-bottom:15px;">
-        <label style="display:block; margin-bottom:5px; font-weight:600;">Afua Tenkorang</label>
-        <input type="text" id="phone-afua" placeholder="e.g. 0244123456" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+        <input type="text" id="phone-linda" value="0205826357" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
       </div>
       <button class="btn btn-green" onclick="saveSupervisorPhones()">Save Contacts</button>
     </div>
@@ -452,77 +452,91 @@
   let charts = {};
   
   const supervisorData = {
-    "Felix Abevi Vifah": {
-      unit: "Collection Units 1-21",
+    "Afua Tenkorang": {
+      pin: "3333",
+      phone: "0542666867",
       collectors: [
-        {name:"Adjei Messiah", unit:1, phone:"505516587"},
-        {name:"Ali Mohammed", unit:2, phone:"548208732"},
-        {name:"Felicia Gyamfi", unit:3, phone:"244287608"},
-        {name:"David Mensah", unit:4, phone:"543495099"},
-        {name:"Emmanuel Anka Forson", unit:5, phone:"556251256"},
-        {name:"Kofi Anomansah", unit:6, phone:"549006409"},
-        {name:"Esther Amatey", unit:7, phone:"248137317"},
-        {name:"Evans Nii Tetteh Badger", unit:8, phone:"550999542"},
-        {name:"Faustina Awiah Banlogo", unit:9, phone:"244495859"},
-        {name:"Felicia Dakoury", unit:10, phone:"244523193"},
-        {name:"Happiana Maku Pinto", unit:11, phone:"249037227"},
-        {name:"Hellen Agbeyeyeye", unit:12, phone:"552171437"},
-        {name:"Isaac Awarful", unit:13, phone:"557136805"},
-        {name:"Laud Yartey", unit:14, phone:"572182088"},
-        {name:"Lydia Denkyi", unit:15, phone:"242077365"},
-        {name:"Meshack Kwaku Adjei", unit:16, phone:"247569414"},
-        {name:"Mr. Joseph Adjei Adjetey", unit:17, phone:"244029287"},
-        {name:"Enock Mensah Wonkyi", unit:18, phone:"530295207"},
-        {name:"Nyarko Deborah", unit:19, phone:"533282741"},
-        {name:"Paul Okoe Tetteh", unit:20, phone:"557438213"},
-        {name:"Prince Antwi", unit:21, phone:"270956124"}
+        { unit: 1, name: "Naima Abubakar-Osman", phone: "0242744000" },
+        { unit: 3, name: "Ruth Lartey", phone: "0593684135" },
+        { unit: 6, name: "Patient Gunney", phone: "0241572849" },
+        { unit: 7, name: "Ernest Brobbey", phone: "0558290195" },
+        { unit: 8, name: "Alex Gyan", phone: "0242526516" },
+        { unit: 9, name: "Solomon Sena Adigbli", phone: "0249731544" },
+        { unit: 12, name: "Abubakar Issahaku", phone: "0201372764" },
+        { unit: 16, name: "Esther Amatey", phone: "0248137317" },
+        { unit: 18, name: "Lydia Denkyi", phone: "0242077365" },
+        { unit: 23, name: "Raphael Darpoh", phone: "0244832930" },
+        { unit: 32, name: "Adjei Messiah", phone: "0505516587" },
+        { unit: 34, name: "Meshack Kwaku Adjei", phone: "0572182088" },
+        { unit: 39, name: "Kofi Anomansah", phone: "0549006409" },
+        { unit: 42, name: "Thomas Yador", phone: "0244987173" },
+        { unit: 43, name: "Bashir Mohammed Saeed", phone: "0503817056" },
+        { unit: 46, name: "Alice Kumi Agy", phone: "0249091726" },
+        { unit: 49, name: "Larbi Emmanuel", phone: "0548703502" },
+        { unit: 54, name: "Zakya Habib", phone: "0549004412" },
+        { unit: 56, name: "Edmund Quartey", phone: "0541703392" },
+        { unit: 60, name: "Elizabeth Quartey Oyoe", phone: "0546696862" },
+        { unit: 63, name: "Sandra Lartey", phone: "0245566548" },
+        { unit: 67, name: "Theophilus Nkum Antwi", phone: "0594849933" },
+        { unit: 68, name: "Faustina Awiah Banlogo", phone: "0531769808" }
+      ]
+    },
+    "Abevi Felix Vifah": {
+      pin: "1111",
+      phone: "0551440416",
+      collectors: [
+        { unit: 2, name: "Clement Elorm Aponi", phone: "0548334994" },
+        { unit: 10, name: "Prince Antwi", phone: "0270956124" },
+        { unit: 14, name: "Emmanuella Owusu Ansah", phone: "0256476363" },
+        { unit: 20, name: "Maxwell Odametey", phone: "0245483371" },
+        { unit: 21, name: "Hellen Agbeyeyeye", phone: "0552171437" },
+        { unit: 24, name: "Felicia Gyamfi", phone: "0244287608" },
+        { unit: 29, name: "Wilhelmina Appiah", phone: "0546691051" },
+        { unit: 31, name: "Ayisha Muktadi Olami", phone: "0277822359" },
+        { unit: 33, name: "Mohammed Issah Blorbey", phone: "0553459657" },
+        { unit: 35, name: "Ernest Yeboah", phone: "0202464733" },
+        { unit: 36, name: "Stephany Klutse", phone: "0241919886" },
+        { unit: 38, name: "Veronica Yanney", phone: "0553470895" },
+        { unit: 41, name: "Prince Gyimah", phone: "0593108726" },
+        { unit: 45, name: "Prince Opoku Boampong", phone: "0244684896" },
+        { unit: 47, name: "Josephine Techie-Menson", phone: "0243648676" },
+        { unit: 51, name: "Emmanuel Anka Forson", phone: "0556251256" },
+        { unit: 52, name: "Felix Owusu", phone: "0544694748" },
+        { unit: 55, name: "Nimrod Adumoah Downona", phone: "0545992292" },
+        { unit: 57, name: "Sule Marfo", phone: "0553446246" },
+        { unit: 61, name: "Felicia Bekoe", phone: "0558220809" },
+        { unit: 64, name: "Victoria Yartey", phone: "0552732342" },
+        { unit: 65, name: "Emmanuel Oppong Kojo", phone: "0546756904" },
+        { unit: 69, name: "Evans Nii Tetteh Badger", phone: "0550999542" }
       ]
     },
     "Linda Arthur": {
-      unit: "Collection Units 22-42",
+      pin: "2222",
+      phone: "0205826357",
       collectors: [
-        {name:"Prince Opoku", unit:22, phone:"550766676"},
-        {name:"Raphael Darpoh", unit:23, phone:"244832930"},
-        {name:"Reuben Quarcoo", unit:24, phone:"561577884"},
-        {name:"Sandra Lartey", unit:25, phone:"544049176"},
-        {name:"Shadrack Akakpo", unit:26, phone:"541110048"},
-        {name:"Stephany Klutse", unit:27, phone:"241919886"},
-        {name:"Thomas Bentum Yankey", unit:28, phone:"264464464"},
-        {name:"Clement Elorm Aponi", unit:29, phone:"548334994"},
-        {name:"Emmanuella Owusu Ansah", unit:30, phone:"256476863"},
-        {name:"Ruth Lartey", unit:31, phone:"593684135"},
-        {name:"Veronica Yanney", unit:32, phone:"553470895"},
-        {name:"Wilhelmina Appiah", unit:33, phone:"546691051"},
-        {name:"Elizabeth Esi Amegashie", unit:34, phone:"554592808"},
-        {name:"Ernest Brobbey", unit:35, phone:"558290185"},
-        {name:"Priscilla Ofosu", unit:36, phone:"0546733244"},
-        {name:"Charles Nii Addy", unit:37, phone:"558288060"},
-        {name:"Nana Korankyewa Hanson", unit:38, phone:"240014670"},
-        {name:"Josephine Techie-Menson", unit:39, phone:"243648676"},
-        {name:"Theophilus Nana Gyimah", unit:40, phone:"545994109"},
-        {name:"Felicia Bekoe", unit:41, phone:"558220809"},
-        {name:"Sule Marfo", unit:42, phone:"553446246"}
-      ]
-    },
-    "Afua Tenkorang": {
-      unit: "Collection Units 43-58",
-      collectors: [
-        {name:"Clifford Kwesi Amoako-Essel", unit:43, phone:"244949668"},
-        {name:"Bashir Mohammed Saeed", unit:44, phone:"503817056"},
-        {name:"Nancy Oppong", unit:45, phone:"248688627"},
-        {name:"Felix Owusu", unit:46, phone:"544694748"},
-        {name:"Martha Larkotey", unit:47, phone:"244497766"},
-        {name:"Joseph Martey-Korley", unit:48, phone:"243759191"},
-        {name:"Bismark Twumasi", unit:49, phone:"240310709"},
-        {name:"Victoria Yartey", unit:50, phone:"552732342"},
-        {name:"Michael Anang", unit:51, phone:"540555095"},
-        {name:"Reginald Kumah Johnson", unit:52, phone:"245593278"},
-        {name:"Prince Opoku Boampong", unit:53, phone:"244684896"},
-        {name:"John Tetteh", unit:54, phone:"547052205"},
-        {name:"Emmanuel Oppong Kojo", unit:55, phone:"546756904"},
-        {name:"Elizabeth Quartey Oyoe", unit:56, phone:"546696862"},
-        {name:"Henry Koranteng", unit:57, phone:"244082813"},
-        {name:"Nambo Michael", unit:58, phone:"550631175"}
+        { unit: 4, name: "Anne Mensah", phone: "0593360569" },
+        { unit: 5, name: "Reuben Quarcoo", phone: "0551549796" },
+        { unit: 11, name: "Enock Mensah Wonkyi", phone: "0509906711" },
+        { unit: 13, name: "Martha Larkotey", phone: "0244497766" },
+        { unit: 15, name: "Happiana Pinto", phone: "0249037227" },
+        { unit: 17, name: "Theophilus Nana Gyamah", phone: "0545994109" },
+        { unit: 19, name: "Shadrack Akakpo", phone: "0541110048" },
+        { unit: 22, name: "David Mensah", phone: "0543495099" },
+        { unit: 25, name: "Joseph Baidoo", phone: "0557444641" },
+        { unit: 26, name: "Reginald Kumah Johnson", phone: "0245593278" },
+        { unit: 27, name: "Ali Mohammed", phone: "0548208732" },
+        { unit: 28, name: "Bismark Twumasi", phone: "0240310709" },
+        { unit: 30, name: "Elizabeth Esi Amegashie", phone: "0554592808" },
+        { unit: 37, name: "Gifty Adzo Porsoo", phone: "0542709277" },
+        { unit: 40, name: "John Tetteh", phone: "0547052205" },
+        { unit: 44, name: "Issah Jamila (Esther Makafui)", phone: "0245281041" },
+        { unit: 48, name: "Beatrice Siada", phone: "0247274608" },
+        { unit: 50, name: "Mr. Joseph Adjei Adjetey", phone: "0244029287" },
+        { unit: 53, name: "Nyarko Deborah", phone: "0533282741" },
+        { unit: 58, name: "Charles Ansong (Mustapha Lartey)", phone: "0246385892" },
+        { unit: 59, name: "Laud Yartey", phone: "0598960390" },
+        { unit: 62, name: "Rosemary Ajitey", phone: "0257726722" },
+        { unit: 66, name: "Nancy Oppong", phone: "0550352875" }
       ]
     }
   };
@@ -600,7 +614,7 @@
       const name = document.getElementById('sup-name-select').value;
       if (!name) { alert("Please select your name."); return; }
       
-      const pins = {'Felix Abevi Vifah':'1111', 'Linda Arthur':'2222', 'Afua Tenkorang':'3333'};
+      const pins = {'Afua Tenkorang':'3333', 'Abevi Felix Vifah':'1111', 'Linda Arthur':'2222'};
       if (pin === pins[name]) {
         valid = true;
         currentUserName = name;
@@ -703,13 +717,13 @@
   }
 
   function saveSupervisorPhones() {
-    const p1 = document.getElementById('phone-felix').value.trim();
-    const p2 = document.getElementById('phone-linda').value.trim();
-    const p3 = document.getElementById('phone-afua').value.trim();
+    const p1 = document.getElementById('phone-afua').value.trim();
+    const p2 = document.getElementById('phone-abevi').value.trim();
+    const p3 = document.getElementById('phone-linda').value.trim();
     
-    localStorage.setItem('sup_phone_Felix Abevi Vifah', p1);
-    localStorage.setItem('sup_phone_Linda Arthur', p2);
-    localStorage.setItem('sup_phone_Afua Tenkorang', p3);
+    localStorage.setItem('sup_phone_Afua Tenkorang', p1);
+    localStorage.setItem('sup_phone_Abevi Felix Vifah', p2);
+    localStorage.setItem('sup_phone_Linda Arthur', p3);
     
     alert('Supervisor contacts saved!');
     if (document.getElementById('tab-supervisors').classList.contains('active')) {
@@ -718,9 +732,9 @@
   }
 
   function loadSupervisorPhones() {
-    document.getElementById('phone-felix').value = localStorage.getItem('sup_phone_Felix Abevi Vifah') || '';
-    document.getElementById('phone-linda').value = localStorage.getItem('sup_phone_Linda Arthur') || '';
-    document.getElementById('phone-afua').value = localStorage.getItem('sup_phone_Afua Tenkorang') || '';
+    document.getElementById('phone-afua').value = localStorage.getItem('sup_phone_Afua Tenkorang') || '0542666867';
+    document.getElementById('phone-abevi').value = localStorage.getItem('sup_phone_Abevi Felix Vifah') || '0551440416';
+    document.getElementById('phone-linda').value = localStorage.getItem('sup_phone_Linda Arthur') || '0205826357';
   }
 
   function getFilteredLogs() {
@@ -774,7 +788,7 @@
     const filteredLogs = getFilteredLogs();
     
     if (currentUserRole === 'researcher') {
-      const sups = ['Felix Abevi Vifah', 'Linda Arthur', 'Afua Tenkorang'];
+      const sups = ['Afua Tenkorang', 'Abevi Felix Vifah', 'Linda Arthur'];
       let supsReported = new Set(filteredLogs.filter(l => l.date === today).map(l => l.supervisor));
       
       sups.forEach(s => {
@@ -806,9 +820,9 @@
 
   function renderSupervisors() {
     const sups = {
-      'Felix Abevi Vifah': {unit: 'Units 1-21', expected: 21},
-      'Linda Arthur': {unit: 'Units 22-42', expected: 21},
-      'Afua Tenkorang': {unit: 'Units 43-58', expected: 16}
+      'Afua Tenkorang': {unit: 'Units 1,3,6-9,12,16,18,23,32,34,39,42-43,46,49,54,56,60,63,67-68', expected: 23},
+      'Abevi Felix Vifah': {unit: 'Units 2,10,14,20-21,24,29,31,33,35-36,38,41,45,47,51-52,55,57,61,64-65,69', expected: 23},
+      'Linda Arthur': {unit: 'Units 4-5,11,13,15,17,19,22,25-28,30,37,40,44,48,50,53,58-59,62,66', expected: 23}
     };
     
     let html = '';
