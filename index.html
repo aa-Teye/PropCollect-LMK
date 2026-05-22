@@ -395,6 +395,12 @@
       </div>
     </div>
     
+    <div id="billsLoading" style="display:none; text-align:center;padding:40px;">
+      <div style="font-size:40px;">⏳</div>
+      <p style="color:#64748b;margin-top:12px; font-weight:600;">Loading bills...</p>
+      <p style="color:#94a3b8;font-size:12px;">Fetching all assigned bills</p>
+    </div>
+    
     <div id="bills-container" style="padding-bottom: 40px;"></div>
   </div>
 
@@ -505,44 +511,6 @@
     }
   };
 
-  const billsData = {
-    "Adjei Messiah": [
-      {id:"ABNMA08351004", useType:"RP", amount:2566.60},
-      {id:"ABNMA_803418", useType:"RP", amount:2750.31},
-      {id:"ABNMA08351005", useType:"RP", amount:2923.82},
-      {id:"ABNMA08431012", useType:"RP", amount:2929.96},
-      {id:"ABNMA_237392", useType:"CP", amount:3247.88},
-      {id:"ABNMA08346036", useType:"RP", amount:3720.58},
-      {id:"ABNMA08346050", useType:"CP", amount:3743.43},
-      {id:"ABNMA08273022", useType:"CP", amount:3781.87},
-      {id:"ABNMA08346045", useType:"CP", amount:3999.53},
-      {id:"ABNMA_132063", useType:"CP", amount:5868.74}
-    ],
-    "Ali Mohammed": [
-      {id:"ABNMA08065023", useType:"RP", amount:2549.51},
-      {id:"ABNMA09101009", useType:"RP", amount:3164.29},
-      {id:"ABNMA08065015", useType:"CP", amount:3224.66},
-      {id:"ABNMA08305077", useType:"CP", amount:3458.60},
-      {id:"ABNMA08305140", useType:"CP", amount:4267.96},
-      {id:"ABNMA08099001", useType:"MX", amount:4383.97},
-      {id:"ABNMA08234021", useType:"CP", amount:4458.67},
-      {id:"ABNMA_314615", useType:"CP", amount:6419.50},
-      {id:"ABNMA08234053", useType:"CP", amount:6919.06},
-      {id:"ABNMA09032040", useType:"CP", amount:13162.67}
-    ],
-    "Felicia Gyamfi": [
-      {id:"ABNMA08444006", useType:"RP", amount:2658.94},
-      {id:"ABNMA08243031", useType:"SP", amount:2677.45},
-      {id:"ABNMA08106054", useType:"CP", amount:2757.58},
-      {id:"ABNMA08196045", useType:"RP", amount:3536.01},
-      {id:"ABNMA09199019", useType:"CP", amount:4254.43},
-      {id:"ABNMA_153473", useType:"CP", amount:4625.43},
-      {id:"ABNMA08079028", useType:"CP", amount:5721.40},
-      {id:"ABNMA08397138", useType:"SP", amount:5900.94},
-      {id:"ABNMA_714019", useType:"CP", amount:6419.50},
-      {id:"ABNMA09220002", useType:"IP", amount:17934.83}
-    ]
-  };
 
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRjZS5WZqw0XCu6w6Vd-VrMhQP8kkkMpRb3qVoaHqdWo5cQzRtwbEXDCluj7pzoOMf/exec';
   
@@ -604,9 +572,10 @@
       return;
     }
     currentCollector = JSON.parse(val);
-    const bills = billsData[currentCollector.name] || [];
-    document.getElementById('bill-count-display').innerText = bills.length;
+    document.getElementById('bill-count-display').innerText = '...';
   }
+
+  window.state = { bills: [] };
 
   function goToStep2() {
     if (!currentCollector) {
@@ -617,7 +586,6 @@
     console.log('Supervisor:', currentSupervisor);
     console.log('Collector:', currentCollector.name);
     console.log('Date:', document.getElementById('date-select').value);
-    console.log('Bills:', billsData[currentCollector.name]);
 
     document.getElementById('s2-collector-info').innerText = 
       `Unit ${currentCollector.unit} — ${currentCollector.name}`;
@@ -627,19 +595,69 @@
     document.getElementById('search-result').style.display = 'none';
     document.getElementById('bill-search-input').value = '';
     
-    const bills = billsData[currentCollector.name] || [];
     formBills = [];
+    loadCollectorBills(currentCollector.name, currentCollector.unit);
     
-    if (bills.length === 0) {
-      container.innerHTML = '<div class="card" id="no-bills-msg"><p>No pre-loaded bills. Use bill search below.</p></div>';
-    } else {
-      bills.forEach((bill) => {
-        addBillToUI(bill);
-      });
-    }
-    
-    // updateTotals(); // undefined function was blocking progression
     showScreen('screen-step2');
+  }
+
+  function loadCollectorBills(collectorName, unit) {
+    var loadingEl = document.getElementById('billsLoading');
+    var container = document.getElementById('bills-container');
+      
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (container) container.innerHTML = '';
+    window.state.bills = [];
+    
+    var cbName = '_bills_' + Date.now();
+    var script = document.createElement('script');
+    var called = false;
+    
+    window[cbName] = function(data) {
+      if (called) return;
+      called = true;
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (document.body.contains(script)) 
+        document.body.removeChild(script);
+      delete window[cbName];
+      
+      if (data && data.bills && data.bills.length > 0) {
+        window.state.bills = data.bills;
+        renderBillCards();
+      } else {
+        window.state.bills = [];
+        if (container) {
+          container.innerHTML = 
+            '<div style="text-align:center;padding:40px;color:#64748b;">' +
+            '<div style="font-size:32px">📋</div>' +
+            '<p>No bills found for this collector.</p>' +
+            '</div>';
+        }
+      }
+    };
+    
+    script.onerror = function() {
+      if (!called) window[cbName]({bills:[]});
+    };
+    
+    setTimeout(function() {
+      if (!called) window[cbName]({bills:[]});
+    }, 10000);
+    
+    script.src = SCRIPT_URL + 
+      '?action=getBills' +
+      '&collector=' + encodeURIComponent(collectorName) +
+      '&unit=' + unit +
+      '&callback=' + cbName;
+      
+    document.body.appendChild(script);
+  }
+
+  function renderBillCards() {
+    const bills = window.state.bills || [];
+    bills.forEach((bill) => {
+      addBillToUI(bill);
+    });
   }
 
   function searchBill() {
@@ -647,34 +665,27 @@
     if (!q) return;
     
     let foundBill = null;
-    let foundCollector = null;
-    let foundSupervisor = null;
+    let foundCollector = currentCollector.name;
+    let foundSupervisor = currentSupervisor;
     
-    for (const [collectorName, bills] of Object.entries(billsData)) {
-      const match = bills.find(b => b.id.toLowerCase() === q);
-      if (match) {
-        foundBill = match;
-        foundCollector = collectorName;
-        for (const [sup, data] of Object.entries(supervisorData)) {
-          if (data.collectors.find(c => c.name === collectorName)) {
-            foundSupervisor = sup;
-            break;
-          }
-        }
-        break;
-      }
+    const bills = window.state.bills || [];
+    const match = bills.find(b => (b.id || b.accountNo || '').toLowerCase() === q);
+    if (match) {
+      foundBill = match;
     }
     
     const resDiv = document.getElementById('search-result');
     resDiv.style.display = 'block';
     
     if (foundBill) {
+      const accNo = foundBill.id || foundBill.accountNo || 'N/A';
+      const currentBill = parseFloat(foundBill.currentBill || foundBill.amount || 0).toFixed(2);
       resDiv.innerHTML = `
-        <p><strong>Account Number:</strong> ${foundBill.id}</p>
+        <p><strong>Account Number:</strong> ${accNo}</p>
         <p><strong>Assigned Collector:</strong> ${foundCollector}</p>
         <p><strong>Supervisor:</strong> ${foundSupervisor}</p>
-        <p><strong>Bill Amount:</strong> GHS ${foundBill.amount.toFixed(2)}</p>
-        <p><strong>Use Type:</strong> <span class="badge">${foundBill.useType}</span></p>
+        <p><strong>Bill Amount:</strong> GHS ${currentBill}</p>
+        <p><strong>Use Type:</strong> <span class="badge">${foundBill.useType || 'RP'}</span></p>
         <button class="btn btn-green" onclick='addBillToForm(${JSON.stringify(foundBill)})'>Fill Details</button>
       `;
     } else {
@@ -742,12 +753,25 @@
     const card = document.createElement('div');
     card.className = 'bill-card card';
     card.id = `bill-card-${idx}`;
+    const accNo = bill.id || bill.accountNo || 'N/A';
+    const useType = bill.useType || 'RP';
+    const badgeColor = useType === 'Property Rate' ? '#3b82f6' : (useType === 'BOP' ? '#fcd116' : '#fcd116');
+    const badgeText = useType === 'Property Rate' ? '#fff' : '#000';
+    const currentBill = parseFloat(bill.currentBill || bill.amount || 0).toFixed(2);
+
     card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <strong style="font-size:18px;">${bill.id}</strong>
-        <span class="badge" style="background:#fcd116; color:#000; padding:4px 8px; border-radius:4px; font-weight:bold;">${bill.useType}</span>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+        <div>
+          <strong style="font-size:18px;">${accNo}</strong>
+          ${bill.ownerName ? `<div style="color:#64748b; font-size:14px; margin-top:4px;">${bill.ownerName}</div>` : ''}
+        </div>
+        <span class="badge" style="background:${badgeColor}; color:${badgeText}; padding:4px 8px; border-radius:4px; font-weight:bold;">${useType}</span>
       </div>
-      <div style="font-size:22px; font-weight:bold; color:var(--green); margin-bottom:15px;">GHS ${bill.amount.toFixed(2)}</div>
+      <div style="margin-bottom:15px;">
+        <div style="font-size:14px; color:#64748b;">Current Bill</div>
+        <div style="font-size:22px; font-weight:bold; color:var(--green);">GHS ${currentBill}</div>
+        ${bill.balance !== undefined ? `<div style="font-size:14px; color:#ef4444; margin-top:4px; font-weight:600;">Balance: GHS ${parseFloat(bill.balance).toFixed(2)}</div>` : ''}
+      </div>
       
       <div id="status-badge-${idx}" style="display:none; text-align:center; padding:10px; background:#dcfce7; color:#166534; font-weight:bold; border-radius:8px; margin-bottom:15px;">✅ Submitted</div>
 
