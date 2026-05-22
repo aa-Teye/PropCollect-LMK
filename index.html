@@ -879,7 +879,7 @@
     let foundSupervisor = currentSupervisor;
     
     const bills = window.state.bills || [];
-    const match = bills.find(b => (b.id || b.accountNo || '').toLowerCase() === q);
+    const match = bills.find(b => (b.accountNumber || '').toLowerCase() === q);
     if (match) {
       foundBill = match;
     }
@@ -888,14 +888,14 @@
     resDiv.style.display = 'block';
     
     if (foundBill) {
-      const accNo = foundBill.id || foundBill.accountNo || 'N/A';
-      const currentBill = parseFloat(foundBill.currentBill || foundBill.amount || 0).toFixed(2);
+      const accNo = foundBill.accountNumber || 'N/A';
+      const currentBill = parseFloat(foundBill.currentBill || 0).toFixed(2);
       resDiv.innerHTML = `
         <p><strong>Account Number:</strong> ${accNo}</p>
         <p><strong>Assigned Collector:</strong> ${foundCollector}</p>
         <p><strong>Supervisor:</strong> ${foundSupervisor}</p>
         <p><strong>Bill Amount:</strong> GHS ${currentBill}</p>
-        <p><strong>Use Type:</strong> <span class="badge">${foundBill.useType || 'RP'}</span></p>
+        <p><strong>Use Type:</strong> <span class="badge">${foundBill.rateType || 'BOP'}</span></p>
         <button class="btn btn-green" onclick='addBillToForm(${JSON.stringify(foundBill)})'>Fill Details</button>
       `;
     } else {
@@ -926,7 +926,7 @@
   }
 
   function addBillToForm(bill) {
-    if (formBills.find(b => b.id === bill.id)) {
+    if (formBills.find(b => b.accountNumber === bill.accountNumber)) {
       alert("This bill is already in your current list.");
       return;
     }
@@ -946,7 +946,7 @@
       return;
     }
     
-    addBillToForm({ id: acct, amount: amt, useType: use });
+    addBillToForm({ accountNumber: acct, currentBill: amt, rateType: use });
   }
 
   function addBillToUI(bill) {
@@ -964,24 +964,26 @@
     const card = document.createElement('div');
     card.className = 'bill-card card';
     card.id = `bill-card-${idx}`;
-    const accNo = bill.id || bill.accountNo || 'N/A';
-    const useType = bill.useType || 'RP';
-    const badgeColor = useType === 'Property Rate' ? '#3b82f6' : (useType === 'BOP' ? '#fcd116' : '#fcd116');
-    const badgeText = useType === 'Property Rate' ? '#fff' : '#000';
-    const currentBill = parseFloat(bill.currentBill || bill.amount || 0).toFixed(2);
+    const accNo = bill.accountNumber || 'N/A';
+    const ownerName = bill.ownerName || 'No owner name';
+    const rateType = bill.rateType || 'BOP';
+    const badgeColor = rateType === 'Property Rate' ? '#3b82f6' : (rateType === 'BOP' ? '#fcd116' : '#fcd116');
+    const badgeText = rateType === 'Property Rate' ? '#fff' : '#000';
+    const currentBill = parseFloat(bill.currentBill || 0).toFixed(2);
+    const balance = parseFloat(bill.balance || 0).toFixed(2);
 
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
         <div>
           <strong style="font-size:18px;">${accNo}</strong>
-          ${bill.ownerName ? `<div style="color:#64748b; font-size:14px; margin-top:4px;">${bill.ownerName}</div>` : ''}
+          <div style="color:#64748b; font-size:14px; margin-top:4px;">${ownerName}</div>
         </div>
-        <span class="badge" style="background:${badgeColor}; color:${badgeText}; padding:4px 8px; border-radius:4px; font-weight:bold;">${useType}</span>
+        <span class="badge" style="background:${badgeColor}; color:${badgeText}; padding:4px 8px; border-radius:4px; font-weight:bold;">${rateType}</span>
       </div>
       <div style="margin-bottom:15px;">
         <div style="font-size:14px; color:#64748b;">Current Bill</div>
         <div style="font-size:22px; font-weight:bold; color:var(--green);">GHS ${currentBill}</div>
-        ${bill.balance !== undefined ? `<div style="font-size:14px; color:#ef4444; margin-top:4px; font-weight:600;">Balance: GHS ${parseFloat(bill.balance).toFixed(2)}</div>` : ''}
+        <div style="font-size:14px; color:#ef4444; margin-top:4px; font-weight:600;">Balance: GHS ${balance}</div>
       </div>
       
       <div id="status-badge-${idx}" style="display:none; text-align:center; padding:10px; background:#dcfce7; color:#166534; font-weight:bold; border-radius:8px; margin-bottom:15px;">✅ Submitted</div>
@@ -1108,9 +1110,9 @@
     }
     
     let detailsHtml = `
-      <p><strong>Account Number:</strong> ${b.id}</p>
-      <p><strong>Use Type:</strong> <span class="badge" style="background:#fcd116; color:#000; padding:2px 6px; border-radius:4px;">${b.useType}</span></p>
-      <p><strong>Bill Amount:</strong> GHS ${b.amount.toFixed(2)}</p>
+      <p><strong>Account Number:</strong> ${b.accountNumber}</p>
+      <p><strong>Use Type:</strong> <span class="badge" style="background:#fcd116; color:#000; padding:2px 6px; border-radius:4px;">${b.rateType}</span></p>
+      <p><strong>Bill Amount:</strong> GHS ${parseFloat(b.currentBill || 0).toFixed(2)}</p>
       <p><strong>Delivered:</strong> ${b.delivered === 'yes' ? '✅ YES' : '❌ NO'}</p>
       <hr style="border:0; border-top:1px solid #e2e8f0; margin:10px 0;">
     `;
@@ -1182,9 +1184,9 @@
     };
     
     const billPayload = {
-      accountNumber: b.id,
-      useType: b.useType,
-      billAmount: b.amount,
+      accountNumber: b.accountNumber,
+      useType: b.rateType,
+      billAmount: b.currentBill,
       delivered: b.delivered
     };
     
