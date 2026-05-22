@@ -369,21 +369,43 @@
       <button onclick="logout()" style="background:none; border:none; color:#fcd116; font-weight:bold; cursor:pointer; font-size:14px;">Logout</button>
     </div>
     
-    <div class="form-group">
-      <label for="collector-select">Select Collector</label>
-      <select id="collector-select" onchange="updateBillCount()"></select>
+    <!-- TABS FOR CHOOSE METHOD -->
+    <div class="tabs-container" style="display:flex; margin-bottom:20px; border-bottom: 2px solid #334155;">
+      <button id="tab-collector" class="step1-tab active" onclick="switchStep1Tab('collector')" style="flex:1; padding:12px; background:#0a1628; color:#FCD116; border:none; border-bottom:3px solid #FCD116; font-weight:bold; cursor:pointer; font-size:15px; border-top-left-radius:8px; border-top-right-radius:8px; outline:none;">👤 By Collector</button>
+      <button id="tab-search" class="step1-tab" onclick="switchStep1Tab('search')" style="flex:1; padding:12px; background:transparent; color:#94a3b8; border:none; font-weight:bold; cursor:pointer; font-size:15px; border-top-left-radius:8px; border-top-right-radius:8px; outline:none;">🔍 Search Bill</button>
     </div>
-    <div class="form-group">
-      <label for="date-select">Date</label>
-      <input type="date" id="date-select">
+
+    <!-- BY COLLECTOR TAB CONTENT -->
+    <div id="tab-content-collector" style="display:block;">
+      <div class="form-group">
+        <label style="color:white;">Select Collector</label>
+        <select id="collector-select" onchange="updateBillCount()"></select>
+      </div>
+      <div class="form-group">
+        <label style="color:white;">Date</label>
+        <input type="date" id="date-select">
+      </div>
+      
+      <div class="card" style="text-align: center; background: #eef2ff; margin-bottom: 20px;">
+        <h3 style="font-size: 24px; color: black; margin: 0 0 5px 0;" id="bill-count-display">0</h3>
+        <p style="color: #64748b; margin: 0;">bills assigned</p>
+      </div>
+      
+      <button class="btn" onclick="goToStep2()">Next</button>
     </div>
-    
-    <div class="card" style="text-align: center; background: #eef2ff;">
-      <h3 style="font-size: 24px;" id="bill-count-display">0</h3>
-      <p>bills assigned</p>
+
+    <!-- SEARCH BILL TAB CONTENT -->
+    <div id="tab-content-search" style="display:none;">
+      <div class="card" style="background:#0a1628; border:1px solid #FCD116;">
+        <h3 style="color:white; margin-top:0;">Search Bill by Account Number</h3>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+          <input type="text" id="step1-search-input" placeholder="Search any bill by account number..." style="flex:1; padding:12px; border-radius:8px; border:none;">
+          <button class="btn btn-green" style="margin:0; width:auto; padding:12px 20px;" onclick="searchBillStep1()">Search</button>
+        </div>
+        <div id="step1-search-result" style="display:none; background:white; padding:15px; border-radius:8px; color:black; max-height: 400px; overflow-y: auto;">
+        </div>
+      </div>
     </div>
-    
-    <button class="btn" onclick="goToStep2()">Next</button>
   </div>
 
   <!-- STEP 2: BILL DETAILS -->
@@ -603,6 +625,7 @@
     });
     
     updateBillCount();
+    switchStep1Tab('collector');
     showScreen('screen-step1');
   }
 
@@ -1237,6 +1260,148 @@
     currentCollector = null;
     formBills = [];
     showScreen('screen-landing');
+  }
+
+  function switchStep1Tab(tab) {
+    const colTab = document.getElementById('tab-collector');
+    const searchTab = document.getElementById('tab-search');
+    const colContent = document.getElementById('tab-content-collector');
+    const searchContent = document.getElementById('tab-content-search');
+    
+    if (tab === 'collector') {
+      colTab.style.background = '#0a1628';
+      colTab.style.color = '#FCD116';
+      colTab.style.borderBottom = '3px solid #FCD116';
+      
+      searchTab.style.background = 'transparent';
+      searchTab.style.color = '#94a3b8';
+      searchTab.style.borderBottom = 'none';
+      
+      colContent.style.display = 'block';
+      searchContent.style.display = 'none';
+    } else {
+      searchTab.style.background = '#0a1628';
+      searchTab.style.color = '#FCD116';
+      searchTab.style.borderBottom = '3px solid #FCD116';
+      
+      colTab.style.background = 'transparent';
+      colTab.style.color = '#94a3b8';
+      colTab.style.borderBottom = 'none';
+      
+      searchContent.style.display = 'block';
+      colContent.style.display = 'none';
+    }
+  }
+
+  function searchBillStep1() {
+    const q = document.getElementById('step1-search-input').value.trim();
+    if (!q) {
+      alert("Please enter an account number.");
+      return;
+    }
+    
+    const resDiv = document.getElementById('step1-search-result');
+    resDiv.style.display = 'block';
+    resDiv.innerHTML = `
+      <div style="text-align:center; padding:20px;">
+        <span style="font-size:24px;">⏳</span>
+        <p style="margin-top:8px; font-weight:600; color:#64748b;">Searching system...</p>
+      </div>
+    `;
+    
+    var ts = Date.now();
+    var cbName = 'searchCb' + ts;
+    var called = false;
+    
+    window[cbName] = function(data) {
+      called = true;
+      delete window[cbName];
+      
+      if (data && data.bill) {
+        const bill = data.bill;
+        const accNo = bill.accountNumber || q;
+        const owner = bill.ownerName || 'No owner name';
+        const collector = bill.collector || 'N/A';
+        const supervisor = bill.supervisor || 'N/A';
+        const currentBill = parseFloat(bill.currentBill || 0).toFixed(2);
+        const balance = parseFloat(bill.balance || 0).toFixed(2);
+        
+        resDiv.innerHTML = `
+          <div style="color:black; text-align: left;">
+            <p><strong>Account Number:</strong> ${accNo}</p>
+            <p><strong>Owner Name:</strong> ${owner}</p>
+            <p><strong>Collector Assigned:</strong> ${collector}</p>
+            <p><strong>Supervisor:</strong> ${supervisor}</p>
+            <p><strong>Current Bill:</strong> GHS ${currentBill}</p>
+            <p><strong>Balance:</strong> GHS ${balance}</p>
+            <button class="btn btn-green" style="width:100%; margin-top:15px;" onclick='fillDetailsForSearchBill(${JSON.stringify(bill)})'>📋 Fill Delivery Details</button>
+          </div>
+        `;
+      } else {
+        resDiv.innerHTML = `
+          <p style="color:var(--red); font-weight:bold; text-align:center; padding:15px;">Bill not found in system.</p>
+        `;
+      }
+    };
+    
+    setTimeout(function() {
+      if (!called) {
+        resDiv.innerHTML = `
+          <p style="color:var(--red); font-weight:bold; text-align:center; padding:15px;">Search timed out. Please check your connection.</p>
+        `;
+      }
+    }, 12000);
+    
+    var s = document.createElement('script');
+    s.src = SCRIPT_URL +
+      '?action=getBills' +
+      '&account=' + encodeURIComponent(q) +
+      '&callback=' + cbName;
+    document.head.appendChild(s);
+  }
+
+  function fillDetailsForSearchBill(bill) {
+    currentCollector = {
+      name: bill.collector || "Adjei Messiah",
+      unit: bill.unit || 32,
+      phone: bill.collectorPhone || ""
+    };
+    
+    document.getElementById('s2-collector-info').innerText = 
+      `Unit ${currentCollector.unit} — ${currentCollector.name}`;
+      
+    const container = document.getElementById('bills-container');
+    container.innerHTML = '';
+    document.getElementById('search-result').style.display = 'none';
+    document.getElementById('bill-search-input').value = '';
+    
+    formBills = [];
+    
+    var loadingEl = document.getElementById('billsLoading');
+    if (loadingEl) loadingEl.style.display = 'none';
+    
+    window.state.bills = [bill];
+    window.state.loadedCollectorName = currentCollector.name;
+    window.state.loadedCollectorUnit = currentCollector.unit;
+    
+    totalBills = 1;
+    submittedCount = 0;
+    
+    var progressEl = document.getElementById('billProgress');
+    var progressBar = document.getElementById('progressBar');
+    var progressText = document.getElementById('progressText');
+    
+    if (progressEl) progressEl.style.display = 'block';
+    if (progressText) {
+      progressText.textContent = submittedCount + ' of ' + totalBills + ' bills submitted';
+    }
+    if (progressBar) {
+      progressBar.style.width = '0%';
+    }
+    
+    renderBillCards();
+    
+    showScreen('screen-step2');
   }
 
   function checkSessionOnLoad() {
