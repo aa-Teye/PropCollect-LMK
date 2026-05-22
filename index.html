@@ -345,11 +345,28 @@
     <div id="supervisors-list"></div>
   </div>
 
-  <!-- STEP 1: SELECT COLLECTOR & DATE -->
-  <div id="screen-step1" class="screen">
+  <!-- PIN SCREEN -->
+  <div id="screen-pin" class="screen">
     <div class="top-bar">
       <button class="back-btn" onclick="showScreen('screen-landing')">←</button>
+      <h2 id="pin-supervisor-name" style="margin:0; font-size: 18px;"></h2>
+    </div>
+    <div class="card" style="margin-top:20px;">
+      <h3 style="color:var(--navy); margin-top:0;">Authentication Required</h3>
+      <div class="form-group">
+        <label for="supervisor-pin" style="color:var(--navy);">Enter your 4-digit PIN</label>
+        <input type="password" id="supervisor-pin" maxlength="4" style="text-align:center; font-size:24px; letter-spacing:8px;">
+      </div>
+      <div id="pin-error" style="color:var(--red); margin-bottom:10px; display:none; font-weight:600;">Incorrect PIN. Try again.</div>
+      <button class="btn btn-green" onclick="checkPin()">Login</button>
+    </div>
+  </div>
+
+  <!-- STEP 1: SELECT COLLECTOR & DATE -->
+  <div id="screen-step1" class="screen">
+    <div class="top-bar" style="display: flex; justify-content: space-between; width: 100%;">
       <h2 id="s1-supervisor-name" style="margin:0; font-size: 18px;"></h2>
+      <button onclick="logout()" style="background:none; border:none; color:#fcd116; font-weight:bold; cursor:pointer; font-size:14px;">Logout</button>
     </div>
     
     <div class="form-group">
@@ -548,12 +565,34 @@
 
   function selectSupervisor(name) {
     currentSupervisor = name;
-    document.getElementById('s1-supervisor-name').innerText = name;
+    document.getElementById('pin-supervisor-name').innerText = name;
+    document.getElementById('supervisor-pin').value = '';
+    document.getElementById('pin-error').style.display = 'none';
+    showScreen('screen-pin');
+  }
+
+  function checkPin() {
+    const pinInput = document.getElementById('supervisor-pin').value;
+    const correctPin = supervisorData[currentSupervisor].pin;
     
+    if (pinInput === correctPin) {
+      sessionStorage.setItem('propcollect_session', JSON.stringify({
+        supervisor: currentSupervisor,
+        expires: Date.now() + (24 * 60 * 60 * 1000)
+      }));
+      setupStep1();
+    } else {
+      document.getElementById('pin-error').style.display = 'block';
+      document.getElementById('supervisor-pin').value = '';
+    }
+  }
+
+  function setupStep1() {
+    document.getElementById('s1-supervisor-name').innerText = currentSupervisor;
     const select = document.getElementById('collector-select');
     select.innerHTML = '<option value="">-- Select Collector --</option>';
     
-    supervisorData[name].collectors.forEach(c => {
+    supervisorData[currentSupervisor].collectors.forEach(c => {
       const opt = document.createElement('option');
       opt.value = JSON.stringify(c);
       opt.innerText = `Unit ${c.unit} — ${c.name}`;
@@ -562,6 +601,11 @@
     
     updateBillCount();
     showScreen('screen-step1');
+  }
+
+  function logout() {
+    sessionStorage.removeItem('propcollect_session');
+    resetApp();
   }
 
   function updateBillCount() {
@@ -1021,7 +1065,23 @@
     showScreen('screen-landing');
   }
 
-  window.onload = initLanding;
+  function checkSessionOnLoad() {
+    const sessionStr = sessionStorage.getItem('propcollect_session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session.supervisor && session.expires > Date.now()) {
+          currentSupervisor = session.supervisor;
+          initLanding();
+          setupStep1();
+          return;
+        }
+      } catch (e) {}
+    }
+    initLanding();
+  }
+
+  window.onload = checkSessionOnLoad;
 </script>
 
 </body>
