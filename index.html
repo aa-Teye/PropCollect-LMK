@@ -604,21 +604,23 @@
   function loadCollectorBills(collectorName, unit) {
     var loadingEl = document.getElementById('billsLoading');
     var container = document.getElementById('bills-container');
-      
+    
     if (loadingEl) loadingEl.style.display = 'block';
     if (container) container.innerHTML = '';
     window.state.bills = [];
     
     var cbName = '_bills_' + Date.now();
-    var script = document.createElement('script');
     var called = false;
     
+    // Define callback FIRST before creating script
     window[cbName] = function(data) {
       if (called) return;
       called = true;
       if (loadingEl) loadingEl.style.display = 'none';
-      if (document.body.contains(script)) 
-        document.body.removeChild(script);
+      
+      // Clean up script tag
+      var oldScript = document.getElementById('billsScript');
+      if (oldScript) document.body.removeChild(oldScript);
       delete window[cbName];
       
       if (data && data.bills && data.bills.length > 0) {
@@ -636,20 +638,24 @@
       }
     };
     
-    script.onerror = function() {
-      if (!called) window[cbName]({bills:[]});
-    };
-    
+    // Set timeout BEFORE appending script
     setTimeout(function() {
       if (!called) window[cbName]({bills:[]});
-    }, 10000);
+    }, 15000);
     
+    // Create and append script LAST
+    var script = document.createElement('script');
+    script.id = 'billsScript';
     script.src = SCRIPT_URL + 
       '?action=getBills' +
       '&collector=' + encodeURIComponent(collectorName) +
       '&unit=' + unit +
       '&callback=' + cbName;
-      
+    
+    // Remove old script if exists
+    var existing = document.getElementById('billsScript');
+    if (existing) document.body.removeChild(existing);
+    
     document.body.appendChild(script);
   }
 
