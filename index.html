@@ -1366,6 +1366,12 @@ function loadCollectorBills(collectorName, unit) {
       if (bills.length > 0) {
         var bill = bills[0];
         if (resultDiv) {
+          var warningNote = '';
+          if (bill.supervisor && currentSupervisor && bill.supervisor.toLowerCase().trim() !== currentSupervisor.toLowerCase().trim()) {
+            warningNote = '<div style="color:#CE1126;font-weight:700;margin:10px 0;font-size:13px;line-height:1.4;background:#fee2e2;padding:10px;border-radius:8px;border:1px solid #fecaca;">' +
+              '⚠ This bill belongs to ' + bill.supervisor + '\'s team — Collector: ' + bill.collector + '</div>';
+          }
+          
           resultDiv.innerHTML = 
             '<div style="background:white;' +
             'border-radius:12px;padding:16px;' +
@@ -1389,6 +1395,7 @@ function loadCollectorBills(collectorName, unit) {
             'Balance: <strong>GHS ' + 
             parseFloat(bill.balance).toFixed(2) + 
             '</strong></div>' +
+            warningNote +
             '<button onclick="fillSearchedBill()" ' +
             'style="width:100%;margin-top:12px;' +
             'padding:12px;background:#006B3F;color:white;' +
