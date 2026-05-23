@@ -595,6 +595,23 @@
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRjZS5WZqw0XCu6w6Vd-VrMhQP8kkkMpRb3qVoaHqdWo5cQzRtwbEXDCluj7pzoOMf/exec';
   let allLogs = [];
   let charts = {};
+
+  function keepWarm() {
+    window.onWarmDone = function() {
+      window.onWarmDone = null;
+    };
+    var old = document.getElementById('warmScript');
+    if (old) old.parentNode.removeChild(old);
+    var script = document.createElement('script');
+    script.id = 'warmScript';
+    script.src = SCRIPT_URL + 
+      '?action=ping&callback=onWarmDone';
+    script.onerror = function() {};
+    document.head.appendChild(script);
+  }
+
+  keepWarm();
+  setInterval(keepWarm, 4 * 60 * 1000);
   
   const supervisorData = {
     "Afua Tenkorang": {
@@ -803,9 +820,9 @@
       document.getElementById('user-header-title').innerText = `Research Team | Full Access`;
     }
     
-    loadData();
+    loadDailyLogs();
     if (!window.refreshInterval) {
-      window.refreshInterval = setInterval(loadData, 60000);
+      window.refreshInterval = setInterval(loadDailyLogs, 60000);
     }
   }
 
@@ -820,28 +837,52 @@
     }
   });
 
-  function loadData() {
+  function renderDashboard() {
+    renderAll();
+  }
+
+  function loadDailyLogs() {
     const cached = localStorage.getItem('propcollect_data');
     if (cached) {
-      allLogs = JSON.parse(cached);
-      renderAll();
+      try {
+        allLogs = JSON.parse(cached);
+        renderAll();
+      } catch(e) {}
     }
     
-    document.getElementById('last-updated').innerText = 'Fetching...';
-    fetchData('getDailyLogs', function(data) {
-      if (data.logs) {
+    var loadingText = document.getElementById('last-updated');
+    if (loadingText) loadingText.innerText = 'Fetching...';
+
+    window.onLogsLoaded = function(data) {
+      window.onLogsLoaded = null;
+      if (data && data.logs) {
         allLogs = data.logs;
         localStorage.setItem('propcollect_data', JSON.stringify(allLogs));
-        renderAll();
+        renderDashboard();
       }
-      document.getElementById('last-updated').innerText = 'Last updated: ' + new Date().toLocaleTimeString();
-      document.getElementById('cache-size').innerText = 
-        (localStorage.getItem('propcollect_data') || '').length / 1024 | 0 + ' KB';
-    });
+      if (loadingText) loadingText.innerText = 'Last updated: ' + new Date().toLocaleTimeString();
+      var cacheSizeEl = document.getElementById('cache-size');
+      if (cacheSizeEl) {
+        cacheSizeEl.innerText = (localStorage.getItem('propcollect_data') || '').length / 1024 | 0 + ' KB';
+      }
+    };
+
+    var old = document.getElementById('logsScript');
+    if (old) old.parentNode.removeChild(old);
+
+    var script = document.createElement('script');
+    script.id = 'logsScript';
+    script.src = SCRIPT_URL +
+      '?action=getDailyLogs&callback=onLogsLoaded';
+    script.onerror = function() {
+      console.error('Failed to load logs');
+      if (loadingText) loadingText.innerText = 'Failed to load logs';
+    };
+    document.head.appendChild(script);
   }
   
   function forceRefresh() {
-    loadData();
+    loadDailyLogs();
   }
 
   function switchTab(tabId) {
