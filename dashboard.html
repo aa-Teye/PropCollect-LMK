@@ -978,12 +978,12 @@
       let rate = bills > 0 ? Math.round((deliv/bills)*100) : 0;
       let status = rate >= 70 ? '🟢' : rate >= 40 ? '🟡' : '🔴';
       
-      let phone = localStorage.getItem('sup_phone_' + s);
+      let phone = localStorage.getItem('sup_phone_' + s) || (supervisorData[s] ? supervisorData[s].phone : '');
       let buttonsHtml = '';
       if (phone && phone.trim() !== '') {
         buttonsHtml = `
           <a href="${formatCall(phone)}" style="flex:1;padding:8px;background:#006B3F;color:white;border-radius:6px;text-align:center;text-decoration:none;font-weight:600;font-size:12px;">📞 Call Supervisor</a>
-          <a href="${formatWhatsApp(phone)}" target="_blank" style="flex:1;padding:8px;background:#25D366;color:white;border-radius:6px;text-align:center;text-decoration:none;font-weight:600;font-size:12px;">💬 WhatsApp Supervisor</a>
+          <a href="${formatWhatsApp(phone)}" target="_blank" style="flex:1;padding:8px;background:#25D366;color:white;border-radius:6px;text-align:center;text-decoration:none;font-weight:600;font-size:12px;">💬 WhatsApp</a>
         `;
       } else {
         buttonsHtml = `
@@ -995,6 +995,7 @@
         <div class="card">
           <h3 style="margin-top:0;">${s}</h3>
           <p style="color:#666; margin-bottom:15px;">${sups[s].unit}</p>
+          <p><strong>Phone:</strong> <a href="${formatCall(phone)}" style="color: var(--green); font-weight: 600; text-decoration: none;">${phone || 'N/A'}</a></p>
           <p><strong>Collectors Active:</strong> ${colls.size} / ${sups[s].expected}</p>
           <p><strong>Total Bills:</strong> ${bills}</p>
           <p><strong>Delivery Rate:</strong> ${rate}%</p>
