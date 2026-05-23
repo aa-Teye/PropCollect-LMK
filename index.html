@@ -719,32 +719,72 @@
     }
   }
 
-  function loadCollectorBills(collectorName, unit) {
-    // If already loaded for this collector, do nothing
-    if (window.state.loadedCollectorName === collectorName && window.state.loadedCollectorUnit === unit) {
-      return;
+// ========================================
+// RELIABLE JSONP HELPER
+// ========================================
+function jsonpRequest(url, callback) {
+  var cbName = 'cb' + Date.now() + 
+    Math.floor(Math.random() * 9999);
+  var done = false;
+  
+  window[cbName] = function(data) {
+    if (done) return;
+    done = true;
+    delete window[cbName];
+    callback(null, data);
+  };
+  
+  var script = document.createElement('script');
+  script.src = url + '&callback=' + cbName;
+  
+  script.onerror = function() {
+    if (!done) {
+      done = true;
+      delete window[cbName];
+      callback(new Error('Script load failed'));
     }
-    // If already loading for this collector, do nothing
-    if (window.state.loadingCollectorName === collectorName && window.state.loadingCollectorUnit === unit) {
-      return;
+  };
+  
+  setTimeout(function() {
+    if (!done) {
+      done = true;
+      delete window[cbName];
+      callback(new Error('Timeout'));
     }
+  }, 15000);
+  
+  document.head.appendChild(script);
+}
 
-    // Set loading state
-    window.state.loadingCollectorName = collectorName;
-    window.state.loadingCollectorUnit = unit;
-    window.state.loadedCollectorName = null;
-    window.state.loadedCollectorUnit = null;
+// ========================================
+// LOAD COLLECTOR BILLS
+// ========================================
+function loadCollectorBills(collectorName, unit) {
+  var state = window.state;
+  var loadingEl = document.getElementById('billsLoading');
+  var container = document.getElementById('bills-container');
+  
+  if (loadingEl && document.getElementById('screen-step2').classList.contains('active')) {
+    loadingEl.style.display = 'block';
+  }
+  if (container) container.innerHTML = '';
+  state.bills = [];
 
-    var loadingEl = document.getElementById('billsLoading');
-    var container = document.getElementById('bills-container');
-    
-    var cacheKey = 'bills_' + collectorName + '_' + unit;
-    var cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        window.state.bills = JSON.parse(cached);
+  // Prefetch state updates
+  window.state.loadingCollectorName = collectorName;
+  window.state.loadingCollectorUnit = unit;
+  window.state.loadedCollectorName = null;
+  window.state.loadedCollectorUnit = null;
+
+  var cacheKey = 'bills_' + collectorName + '_' + unit;
+  var cached = sessionStorage.getItem(cacheKey);
+  
+  if (cached) {
+    try {
+      var cachedBills = JSON.parse(cached);
+      if (cachedBills && cachedBills.length > 0) {
+        state.bills = cachedBills;
         
-        // Mark as loaded
         window.state.loadedCollectorName = collectorName;
         window.state.loadedCollectorUnit = unit;
         window.state.loadingCollectorName = null;
@@ -759,132 +799,112 @@
         
         if (progressEl) progressEl.style.display = 'block';
         if (progressText) {
-          progressText.textContent = submittedCount + 
-            ' of ' + totalBills + ' bills submitted';
+          progressText.textContent = submittedCount + ' of ' + totalBills + ' bills submitted';
         }
         if (progressBar) {
           progressBar.style.width = '0%';
         }
+
+        if (loadingEl) loadingEl.style.display = 'none';
         
-        // If Step 2 screen is active, render immediately
         if (document.getElementById('screen-step2').classList.contains('active')) {
           renderBillCards();
-          if (loadingEl) loadingEl.style.display = 'none';
         }
 
-        // Call callback if exists
+        // Call prefetch callback
         if (window.state.onBillsLoaded) {
           window.state.onBillsLoaded();
           window.state.onBillsLoaded = null;
         }
         return;
-      } catch(e) {}
-    }
-
-    // If Step 2 screen is active, show loading spinner
-    if (document.getElementById('screen-step2').classList.contains('active')) {
-      if (loadingEl) loadingEl.style.display = 'block';
-      if (container) container.innerHTML = '';
-    }
-    window.state.bills = [];
-  
-    var ts = Date.now();
-    var cbName = 'billsCb' + ts;
-    var called = false;
-  
-    window[cbName] = function(data) {
-      called = true;
-      
-      // If Step 2 screen is active, hide loading spinner
-      if (document.getElementById('screen-step2').classList.contains('active')) {
-        if (loadingEl) loadingEl.style.display = 'none';
       }
-
-      if (data && data.bills && data.bills.length > 0) {
-        window.state.bills = data.bills;
-        
-        // Save to cache
-        var cacheKey = 'bills_' + collectorName + '_' + unit;
-        sessionStorage.setItem(cacheKey, JSON.stringify(data.bills));
-        
-        // Mark as loaded
-        window.state.loadedCollectorName = collectorName;
-        window.state.loadedCollectorUnit = unit;
-        window.state.loadingCollectorName = null;
-        window.state.loadingCollectorUnit = null;
-
-        totalBills = 160;
-        submittedCount = 0;
-        
-        var progressEl = document.getElementById('billProgress');
-        var progressBar = document.getElementById('progressBar');
-        var progressText = document.getElementById('progressText');
-        
-        if (progressEl) progressEl.style.display = 'block';
-        if (progressText) {
-          progressText.textContent = submittedCount + 
-            ' of ' + totalBills + ' bills submitted';
-        }
-        if (progressBar) {
-          progressBar.style.width = '0%';
-        }
-        
-        // If Step 2 screen is active, render immediately
-        if (document.getElementById('screen-step2').classList.contains('active')) {
-          renderBillCards();
-        }
-      } else {
-        window.state.loadedCollectorName = collectorName;
-        window.state.loadedCollectorUnit = unit;
-        window.state.loadingCollectorName = null;
-        window.state.loadingCollectorUnit = null;
-
-        if (document.getElementById('screen-step2').classList.contains('active')) {
-          if (container) {
-            container.innerHTML =
-              '<div style="text-align:center;padding:40px;">' +
-              '<p>No bills found.</p></div>';
-          }
-        }
-      }
-
-      // Call callback if exists
-      if (window.state.onBillsLoaded) {
-        window.state.onBillsLoaded();
-        window.state.onBillsLoaded = null;
-      }
-    };
-  
-    setTimeout(function() {
-      if (!called) {
-        window.state.loadingCollectorName = null;
-        window.state.loadingCollectorUnit = null;
-        
-        if (document.getElementById('screen-step2').classList.contains('active')) {
-          if (loadingEl) loadingEl.style.display = 'none';
-          if (container) {
-            container.innerHTML =
-              '<div style="text-align:center;padding:40px;">' +
-              '<p>Could not load bills. Check connection.</p>' +
-              '<button onclick="loadCollectorBills(\'' +
-              collectorName + '\',' + unit + ')"' +
-              ' style="padding:10px 20px;background:#006B3F;' +
-              'color:white;border:none;border-radius:8px;' +
-              'cursor:pointer;margin-top:10px;">🔄 Retry</button>' +
-              '</div>';
-          }
-        }
-      }
-    }, 12000);
-  
-    var s = document.createElement('script');
-    s.src = SCRIPT_URL +
-      '?action=getBills' +
-      '&collector=' + encodeURIComponent(collectorName) +
-      '&unit=' + encodeURIComponent(unit) +
-      '&callback=' + cbName;
-    document.head.appendChild(s);
+    } catch(e) {}
   }
+
+  var url = SCRIPT_URL + 
+    '?action=getBills' +
+    '&collector=' + encodeURIComponent(collectorName) +
+    '&unit=' + encodeURIComponent(unit);
+
+  jsonpRequest(url, function(err, data) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    
+    if (err) {
+      console.error('Bills load error:', err);
+      window.state.loadingCollectorName = null;
+      window.state.loadingCollectorUnit = null;
+
+      if (container && document.getElementById('screen-step2').classList.contains('active')) {
+        container.innerHTML = 
+          '<div style="text-align:center;' +
+          'padding:40px;color:#ef4444;">' +
+          '<div style="font-size:32px">❌</div>' +
+          '<p>Could not load bills.</p>' +
+          '<p style="font-size:12px">' + 
+          err.message + '</p>' +
+          '<button onclick="loadCollectorBills(\'' +
+          collectorName + '\',' + unit + ')" ' +
+          'style="margin-top:12px;padding:10px 20px;' +
+          'background:#006B3F;color:white;border:none;' +
+          'border-radius:8px;cursor:pointer;' +
+          'font-weight:700;">🔄 Retry</button>' +
+          '</div>';
+      }
+      return;
+    }
+    
+    var bills = (data && data.bills) ? data.bills : [];
+    
+    if (bills.length > 0) {
+      sessionStorage.setItem(cacheKey, JSON.stringify(bills));
+      state.bills = bills;
+      
+      window.state.loadedCollectorName = collectorName;
+      window.state.loadedCollectorUnit = unit;
+      window.state.loadingCollectorName = null;
+      window.state.loadingCollectorUnit = null;
+
+      totalBills = 160;
+      submittedCount = 0;
+      
+      var progressEl = document.getElementById('billProgress');
+      var progressBar = document.getElementById('progressBar');
+      var progressText = document.getElementById('progressText');
+      
+      if (progressEl) progressEl.style.display = 'block';
+      if (progressText) {
+        progressText.textContent = submittedCount + ' of ' + totalBills + ' bills submitted';
+      }
+      if (progressBar) {
+        progressBar.style.width = '0%';
+      }
+
+      if (document.getElementById('screen-step2').classList.contains('active')) {
+        renderBillCards();
+      }
+    } else {
+      window.state.loadedCollectorName = collectorName;
+      window.state.loadedCollectorUnit = unit;
+      window.state.loadingCollectorName = null;
+      window.state.loadingCollectorUnit = null;
+
+      if (container && document.getElementById('screen-step2').classList.contains('active')) {
+        container.innerHTML = 
+          '<div style="text-align:center;' +
+          'padding:40px;color:#64748b;">' +
+          '<div style="font-size:32px">📋</div>' +
+          '<p>No bills found for this collector.</p>' +
+          '</div>';
+      }
+    }
+
+    // Call prefetch callback
+    if (window.state.onBillsLoaded) {
+      window.state.onBillsLoaded();
+      window.state.onBillsLoaded = null;
+    }
+  });
+}
 
   function renderBillCards() {
     const bills = window.state.bills || [];
@@ -1294,11 +1314,12 @@
   }
 
   function searchBillByAccount() {
-    console.log('Search button clicked');
-    console.log('Account input value:', document.getElementById('billSearchInput').value);
-
-    var accountNumber = document.getElementById('billSearchInput').value.trim();
-      
+    var input = document.getElementById('billSearchInput');
+    var resultDiv = document.getElementById('billSearchResult');
+    
+    if (!input) return;
+    var accountNumber = input.value.trim();
+    
     console.log('Searching for:', accountNumber);
     
     if (!accountNumber) {
@@ -1306,79 +1327,81 @@
       return;
     }
     
-    var resultDiv = document.getElementById('billSearchResult');
     if (resultDiv) {
       resultDiv.style.display = 'block';
       resultDiv.innerHTML = 
         '<div style="text-align:center;padding:20px;">' +
-        '⏳ Searching...</div>';
+        '⏳ Searching all bills...</div>';
     }
-    
-    var cbName = 'searchCb' + Date.now();
-    var called = false;
-    
-    window[cbName] = function(data) {
-      if (called) return;
-      called = true;
-      delete window[cbName];
-      
-      console.log('Search result:', data);
-      
-      if (data && data.bills && data.bills.length > 0) {
-        var bill = data.bills[0];
+
+    var url = SCRIPT_URL +
+      '?action=getBills' +
+      '&account=' + encodeURIComponent(accountNumber);
+
+    jsonpRequest(url, function(err, data) {
+      if (err) {
         if (resultDiv) {
           resultDiv.innerHTML = 
-            '<div style="background:white;border-radius:12px;' +
-            'padding:16px;margin-top:12px;border:2px solid #006B3F;">' +
-            '<div style="font-weight:700;font-size:16px;color:#0a1628;">' +
-            bill.accountNumber + '</div>' +
-            '<div style="color:#64748b;font-size:13px;margin:4px 0;">' +
+            '<div style="text-align:center;' +
+            'padding:20px;color:#ef4444;">' +
+            '❌ Search failed. Check connection.</div>';
+        }
+        return;
+      }
+      
+      console.log('Search result:', data);
+      var bills = (data && data.bills) ? data.bills : [];
+      
+      if (bills.length > 0) {
+        var bill = bills[0];
+        if (resultDiv) {
+          resultDiv.innerHTML = 
+            '<div style="background:white;' +
+            'border-radius:12px;padding:16px;' +
+            'margin-top:12px;border:2px solid #006B3F;">' +
+            '<div style="font-weight:700;font-size:16px;' +
+            'color:#0a1628;">' + bill.accountNumber + '</div>' +
+            '<div style="color:#64748b;font-size:13px;' +
+            'margin:4px 0;">' + 
             (bill.ownerName || "No owner name") + '</div>' +
-            '<div style="font-size:13px;margin:4px 0;">Collector: <strong>' +
-            bill.collector + '</strong></div>' +
-            '<div style="font-size:13px;margin:4px 0;">Supervisor: <strong>' +
-            bill.supervisor + '</strong></div>' +
-            '<div style="font-size:13px;margin:4px 0;">Current Bill: <strong>GHS ' +
-            parseFloat(bill.currentBill).toFixed(2) + '</strong></div>' +
-            '<div style="font-size:13px;margin:4px 0;">Balance: <strong>GHS ' +
-            parseFloat(bill.balance).toFixed(2) + '</strong></div>' +
-            '<button onclick="fillSearchedBill(' + 
-            JSON.stringify(bill).replace(/"/g, "&quot;") + ')" ' +
-            'style="width:100%;margin-top:12px;padding:12px;' +
-            'background:#006B3F;color:white;border:none;' +
-            'border-radius:8px;font-weight:700;cursor:pointer;">' +
-            '📋 Fill Delivery Details</button>' +
-            '</div>';
+            '<div style="font-size:13px;margin:4px 0;">' +
+            'Collector: <strong>' + bill.collector + 
+            '</strong></div>' +
+            '<div style="font-size:13px;margin:4px 0;">' +
+            'Supervisor: <strong>' + bill.supervisor + 
+            '</strong></div>' +
+            '<div style="font-size:13px;margin:4px 0;">' +
+            'Current Bill: <strong>GHS ' + 
+            parseFloat(bill.currentBill).toFixed(2) + 
+            '</strong></div>' +
+            '<div style="font-size:13px;margin:4px 0;">' +
+            'Balance: <strong>GHS ' + 
+            parseFloat(bill.balance).toFixed(2) + 
+            '</strong></div>' +
+            '<button onclick="fillSearchedBill()" ' +
+            'style="width:100%;margin-top:12px;' +
+            'padding:12px;background:#006B3F;color:white;' +
+            'border:none;border-radius:8px;font-weight:700;' +
+            'cursor:pointer;">📋 Fill Delivery Details' +
+            '</button></div>';
+          
+          window._searchedBill = bill;
         }
       } else {
         if (resultDiv) {
           resultDiv.innerHTML = 
-            '<div style="text-align:center;padding:20px;color:#ef4444;">' +
-            '❌ Bill not found. Check account number and try again.' +
-            '</div>';
+            '<div style="text-align:center;' +
+            'padding:20px;color:#ef4444;">' +
+            '❌ Bill not found. Check account number.</div>';
         }
       }
-    };
-    
-    setTimeout(function() {
-      if (!called) window[cbName]({bills:[]});
-    }, 10000);
-    
-    var script = document.createElement('script');
-    script.src = SCRIPT_URL +
-      '?action=getBills' +
-      '&account=' + encodeURIComponent(accountNumber) +
-      '&callback=' + cbName;
-    document.head.appendChild(script);
+    });
   }
 
-  function fillSearchedBill(bill) {
+  function fillSearchedBill() {
     var state = window.state;
-    state.bills = [bill];
-    state.collector = bill.collector;
-    state.collectorUnit = bill.unit;
-    state.collectorPhone = bill.collectorPhone;
-    state.supervisor = bill.supervisor;
+    var bill = window._searchedBill;
+    if (!bill) return;
     
     currentCollector = {
       name: bill.collector || "Adjei Messiah",
@@ -1392,6 +1415,12 @@
     window.state.loadingCollectorName = null;
     window.state.loadingCollectorUnit = null;
 
+    state.bills = [bill];
+    state.collector = bill.collector;
+    state.collectorUnit = bill.unit;
+    state.collectorPhone = bill.collectorPhone;
+    state.supervisor = bill.supervisor;
+    
     goToStep2();
     
     totalBills = 1;
