@@ -841,9 +841,38 @@
     renderAll();
   }
 
-  // Verified logs loading function using fixed global callback onLogsLoaded
+  function parseLogDate(dateStr) {
+    if (!dateStr) return null;
+    var d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    var parts = dateStr.toString().split('/');
+    if (parts.length === 3) {
+      return new Date(parts[2], 
+        parseInt(parts[1])-1, parseInt(parts[0]));
+    }
+    return null;
+  }
+
+  function isToday(dateStr) {
+    var d = parseLogDate(dateStr);
+    if (!d) return false;
+    var today = new Date();
+    return d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate();
+  }
+
+  function isSameDay(dateStr1, dateStr2) {
+    var d1 = parseLogDate(dateStr1);
+    var d2 = parseLogDate(dateStr2);
+    if (!d1 || !d2) return false;
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  }
+
   function loadDailyLogs() {
-    const cached = localStorage.getItem('propcollect_data');
+    const cached = localStorage.getItem('propcollect_logs') || localStorage.getItem('propcollect_data');
     if (cached) {
       try {
         allLogs = JSON.parse(cached);
@@ -855,21 +884,94 @@
     if (loadingText) loadingText.innerText = 'Fetching...';
 
     window.onLogsLoaded = function(data) {
-      window.onLogsLoaded = null;
       if (data && data.logs) {
-        allLogs = data.logs;
-        localStorage.setItem('propcollect_data', JSON.stringify(allLogs));
+        // Normalize fields from backend (FIX 2)
+        var normalized = data.logs.map(function(item) {
+          return {
+            date: item.date,
+            day: item.day,
+            time: item.time,
+            supervisor: item.supervisor,
+            collector: item.collector,
+            unit: item.unit,
+            phone: item.phone,
+            accountNumber: item.accountNumber || item.billNumber,
+            useType: item.useType,
+            billAmount: parseFloat(item.billAmount || item.amount || 0),
+            delivered: item.delivered || item.status,
+            ratepayerName: item.ratepayerName,
+            ratepayerPhone: item.ratepayerPhone,
+            amountPaid: parseFloat(item.amountPaid || item.collected || 0),
+            modeOfPayment: item.modeOfPayment,
+            receiptRef: item.receiptRef,
+            failureReason: item.failureReason,
+            otherReason: item.otherReason
+          };
+        });
+
+        // Group flat logs into daily log summaries expected by dashboard
+        var grouped = {};
+        normalized.forEach(function(item) {
+          var dateKey = item.date;
+          if (dateKey && dateKey.includes('T')) {
+            dateKey = dateKey.split('T')[0];
+          }
+          
+          var key = dateKey + '_' + item.collector;
+          if (!grouped[key]) {
+            grouped[key] = {
+              date: dateKey,
+              dayOfWeek: item.day || "Unknown",
+              supervisor: item.supervisor,
+              collector: item.collector,
+              collectorUnit: item.unit || 0,
+              submissionTime: item.date,
+              totalBills: 0,
+              totalDelivered: 0,
+              totalFailed: 0,
+              totalAmountCollected: 0,
+              bills: []
+            };
+          }
+          
+          var bill = {
+            accountNumber: item.accountNumber,
+            useType: item.useType,
+            billAmount: item.billAmount,
+            delivered: item.delivered,
+            ratepayerName: item.ratepayerName,
+            ratepayerPhone: item.ratepayerPhone,
+            amountPaid: item.amountPaid,
+            modeOfPayment: item.modeOfPayment,
+            receiptRef: item.receiptRef,
+            failureReason: item.failureReason || item.otherReason
+          };
+          
+          grouped[key].bills.push(bill);
+          grouped[key].totalBills += 1;
+          if (bill.delivered === 'yes') {
+            grouped[key].totalDelivered += 1;
+            grouped[key].totalAmountCollected += bill.amountPaid;
+          } else {
+            grouped[key].totalFailed += 1;
+          }
+        });
+
+        allLogs = Object.values(grouped);
+        localStorage.setItem('propcollect_logs', JSON.stringify(allLogs));
         renderDashboard();
       }
+      
       if (loadingText) loadingText.innerText = 'Last updated: ' + new Date().toLocaleTimeString();
       var cacheSizeEl = document.getElementById('cache-size');
       if (cacheSizeEl) {
-        cacheSizeEl.innerText = (localStorage.getItem('propcollect_data') || '').length / 1024 | 0 + ' KB';
+        cacheSizeEl.innerText = (localStorage.getItem('propcollect_logs') || '').length / 1024 | 0 + ' KB';
       }
     };
 
     var old = document.getElementById('logsScript');
-    if (old) old.parentNode.removeChild(old);
+    if (old && old.parentNode) 
+      old.parentNode.removeChild(old);
 
     var script = document.createElement('script');
     script.id = 'logsScript';
@@ -951,7 +1053,7 @@
     
     getFilteredLogs().forEach(log => {
       // Aggregate today's stats
-      if (log.date === today) {
+      if (isToday(log.date)) {
         tBills += log.totalBills || 0;
         tDeliv += log.totalDelivered || 0;
         tFailed += log.totalFailed || 0;
@@ -976,7 +1078,7 @@
     
     if (currentUserRole === 'researcher') {
       const sups = ['Afua Tenkorang', 'Abevi Felix Vifah', 'Linda Arthur'];
-      let supsReported = new Set(filteredLogs.filter(l => l.date === today).map(l => l.supervisor));
+      let supsReported = new Set(filteredLogs.filter(l => isToday(l.date)).map(l => l.supervisor));
       
       sups.forEach(s => {
         if (!supsReported.has(s)) {
@@ -1152,7 +1254,7 @@
     
     let rows = [];
     getFilteredLogs().forEach(log => {
-      if (fDate && log.date !== fDate) return;
+      if (fDate && !isSameDay(log.date, fDate)) return;
       if (fSup && log.supervisor !== fSup) return;
       
       if (log.bills && Array.isArray(log.bills)) {
@@ -1169,7 +1271,7 @@
       }
     });
     
-    rows.sort((a,b) => new Date(b.date) - new Date(a.date));
+    rows.sort((a,b) => parseLogDate(b.date) - parseLogDate(a.date));
     
     let html = '';
     rows.slice(0, 100).forEach(r => { // limit 100 for perf in dom
