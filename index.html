@@ -399,10 +399,10 @@
       <div class="card" style="background:#0a1628; border:1px solid #FCD116;">
         <h3 style="color:white; margin-top:0;">Search Bill by Account Number</h3>
         <div style="display:flex; gap:10px; margin-bottom:15px;">
-          <input type="text" id="step1-search-input" placeholder="Search any bill by account number..." style="flex:1; padding:12px; border-radius:8px; border:none;">
-          <button class="btn btn-green" style="margin:0; width:auto; padding:12px 20px;" onclick="searchBillStep1()">Search</button>
+          <input type="text" id="billSearchInput" placeholder="Search any bill by account number..." style="flex:1; padding:12px; border-radius:8px; border:none;">
+          <button class="btn btn-green" style="margin:0; width:auto; padding:12px 20px;" onclick="searchBillByAccount()">Search</button>
         </div>
-        <div id="step1-search-result" style="display:none; background:white; padding:15px; border-radius:8px; color:black; max-height: 400px; overflow-y: auto;">
+        <div id="billSearchResult" style="display:none; background:white; padding:15px; border-radius:8px; color:black; max-height: 400px; overflow-y: auto;">
         </div>
       </div>
     </div>
@@ -1293,96 +1293,106 @@
     }
   }
 
-  function searchBillStep1() {
-    const q = document.getElementById('step1-search-input').value.trim();
-    if (!q) {
-      alert("Please enter an account number.");
+  function searchBillByAccount() {
+    console.log('Search button clicked');
+    console.log('Account input value:', document.getElementById('billSearchInput').value);
+
+    var accountNumber = document.getElementById('billSearchInput').value.trim();
+      
+    console.log('Searching for:', accountNumber);
+    
+    if (!accountNumber) {
+      alert('Please enter an account number');
       return;
     }
     
-    const resDiv = document.getElementById('step1-search-result');
-    resDiv.style.display = 'block';
-    resDiv.innerHTML = `
-      <div style="text-align:center; padding:20px;">
-        <span style="font-size:24px;">⏳</span>
-        <p style="margin-top:8px; font-weight:600; color:#64748b;">Searching system...</p>
-      </div>
-    `;
+    var resultDiv = document.getElementById('billSearchResult');
+    if (resultDiv) {
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = 
+        '<div style="text-align:center;padding:20px;">' +
+        '⏳ Searching...</div>';
+    }
     
-    var ts = Date.now();
-    var cbName = 'searchCb' + ts;
+    var cbName = 'searchCb' + Date.now();
     var called = false;
     
     window[cbName] = function(data) {
+      if (called) return;
       called = true;
       delete window[cbName];
       
-      if (data && data.bill) {
-        const bill = data.bill;
-        const accNo = bill.accountNumber || q;
-        const owner = bill.ownerName || 'No owner name';
-        const collector = bill.collector || 'N/A';
-        const supervisor = bill.supervisor || 'N/A';
-        const currentBill = parseFloat(bill.currentBill || 0).toFixed(2);
-        const balance = parseFloat(bill.balance || 0).toFixed(2);
-        
-        resDiv.innerHTML = `
-          <div style="color:black; text-align: left;">
-            <p><strong>Account Number:</strong> ${accNo}</p>
-            <p><strong>Owner Name:</strong> ${owner}</p>
-            <p><strong>Collector Assigned:</strong> ${collector}</p>
-            <p><strong>Supervisor:</strong> ${supervisor}</p>
-            <p><strong>Current Bill:</strong> GHS ${currentBill}</p>
-            <p><strong>Balance:</strong> GHS ${balance}</p>
-            <button class="btn btn-green" style="width:100%; margin-top:15px;" onclick='fillDetailsForSearchBill(${JSON.stringify(bill)})'>📋 Fill Delivery Details</button>
-          </div>
-        `;
+      console.log('Search result:', data);
+      
+      if (data && data.bills && data.bills.length > 0) {
+        var bill = data.bills[0];
+        if (resultDiv) {
+          resultDiv.innerHTML = 
+            '<div style="background:white;border-radius:12px;' +
+            'padding:16px;margin-top:12px;border:2px solid #006B3F;">' +
+            '<div style="font-weight:700;font-size:16px;color:#0a1628;">' +
+            bill.accountNumber + '</div>' +
+            '<div style="color:#64748b;font-size:13px;margin:4px 0;">' +
+            (bill.ownerName || "No owner name") + '</div>' +
+            '<div style="font-size:13px;margin:4px 0;">Collector: <strong>' +
+            bill.collector + '</strong></div>' +
+            '<div style="font-size:13px;margin:4px 0;">Supervisor: <strong>' +
+            bill.supervisor + '</strong></div>' +
+            '<div style="font-size:13px;margin:4px 0;">Current Bill: <strong>GHS ' +
+            parseFloat(bill.currentBill).toFixed(2) + '</strong></div>' +
+            '<div style="font-size:13px;margin:4px 0;">Balance: <strong>GHS ' +
+            parseFloat(bill.balance).toFixed(2) + '</strong></div>' +
+            '<button onclick="fillSearchedBill(' + 
+            JSON.stringify(bill).replace(/"/g, "&quot;") + ')" ' +
+            'style="width:100%;margin-top:12px;padding:12px;' +
+            'background:#006B3F;color:white;border:none;' +
+            'border-radius:8px;font-weight:700;cursor:pointer;">' +
+            '📋 Fill Delivery Details</button>' +
+            '</div>';
+        }
       } else {
-        resDiv.innerHTML = `
-          <p style="color:var(--red); font-weight:bold; text-align:center; padding:15px;">Bill not found in system.</p>
-        `;
+        if (resultDiv) {
+          resultDiv.innerHTML = 
+            '<div style="text-align:center;padding:20px;color:#ef4444;">' +
+            '❌ Bill not found. Check account number and try again.' +
+            '</div>';
+        }
       }
     };
     
     setTimeout(function() {
-      if (!called) {
-        resDiv.innerHTML = `
-          <p style="color:var(--red); font-weight:bold; text-align:center; padding:15px;">Search timed out. Please check your connection.</p>
-        `;
-      }
-    }, 12000);
+      if (!called) window[cbName]({bills:[]});
+    }, 10000);
     
-    var s = document.createElement('script');
-    s.src = SCRIPT_URL +
+    var script = document.createElement('script');
+    script.src = SCRIPT_URL +
       '?action=getBills' +
-      '&account=' + encodeURIComponent(q) +
+      '&account=' + encodeURIComponent(accountNumber) +
       '&callback=' + cbName;
-    document.head.appendChild(s);
+    document.head.appendChild(script);
   }
 
-  function fillDetailsForSearchBill(bill) {
+  function fillSearchedBill(bill) {
+    var state = window.state;
+    state.bills = [bill];
+    state.collector = bill.collector;
+    state.collectorUnit = bill.unit;
+    state.collectorPhone = bill.collectorPhone;
+    state.supervisor = bill.supervisor;
+    
     currentCollector = {
       name: bill.collector || "Adjei Messiah",
       unit: bill.unit || 32,
       phone: bill.collectorPhone || ""
     };
+    currentSupervisor = bill.supervisor || "";
     
-    document.getElementById('s2-collector-info').innerText = 
-      `Unit ${currentCollector.unit} — ${currentCollector.name}`;
-      
-    const container = document.getElementById('bills-container');
-    container.innerHTML = '';
-    document.getElementById('search-result').style.display = 'none';
-    document.getElementById('bill-search-input').value = '';
-    
-    formBills = [];
-    
-    var loadingEl = document.getElementById('billsLoading');
-    if (loadingEl) loadingEl.style.display = 'none';
-    
-    window.state.bills = [bill];
     window.state.loadedCollectorName = currentCollector.name;
     window.state.loadedCollectorUnit = currentCollector.unit;
+    window.state.loadingCollectorName = null;
+    window.state.loadingCollectorUnit = null;
+
+    goToStep2();
     
     totalBills = 1;
     submittedCount = 0;
@@ -1398,10 +1408,6 @@
     if (progressBar) {
       progressBar.style.width = '0%';
     }
-    
-    renderBillCards();
-    
-    showScreen('screen-step2');
   }
 
   function checkSessionOnLoad() {
