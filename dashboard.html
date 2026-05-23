@@ -157,6 +157,32 @@
     
     .chart-container { position: relative; height: 300px; width: 100%; }
     
+    .export-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background-color: var(--navy);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .export-btn:hover {
+      background-color: var(--green);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,107,63,0.2);
+    }
+    .export-btn:active {
+      transform: translateY(0);
+    }
+
     /* Add basic responsiveness */
     @media (max-width: 768px) {
       .grid-4, .grid-2 { grid-template-columns: 1fr; }
@@ -389,22 +415,76 @@
 
   <!-- TAB 6: EXPORT -->
   <div id="tab-export" class="tab-content">
-    <div class="card" style="max-width: 500px;">
-      <h3>Export Data</h3>
-      <p>Select date range or leave blank for all time.</p>
-      <input type="date" id="export-start" title="Start Date">
-      <input type="date" id="export-end" title="End Date">
-      <select id="export-sup">
-        <option value="">All Supervisors</option>
-        <option>Afua Tenkorang</option>
-        <option>Abevi Felix Vifah</option>
-        <option>Linda Arthur</option>
-      </select>
-      
-      <div style="margin-top:20px; display:flex; gap:10px;">
-        <button class="btn btn-green" onclick="exportData('csv')">Download CSV</button>
-        <button class="btn btn-green" onclick="exportData('excel')">Download Excel</button>
-        <button class="btn" onclick="exportData('pdf')">Download PDF</button>
+    <div class="card" style="margin-bottom: 20px;">
+      <h2 style="margin-top:0; color:var(--navy); display: flex; align-items: center; gap: 10px;">
+        <span>📊 Comprehensive Export & Reports System</span>
+      </h2>
+      <p style="color:#64748b; margin-bottom: 0;">Generate and download real-time records, structured research documents, and analytical sheets compiled from all logs.</p>
+    </div>
+
+    <!-- LEVEL 1: RAW DATA -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <span>📁 Level 1 — Raw Data</span>
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">
+        <button class="export-btn" onclick="exportLevel1CSV()">
+          <span>⬇ All Submissions CSV</span>
+        </button>
+        <button class="export-btn" onclick="exportLevel1Excel()">
+          <span>⬇ All Submissions Excel</span>
+        </button>
+        <button class="export-btn" onclick="exportLevel1CollectorCSV()">
+          <span>⬇ Collector Summary CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LEVEL 2: ANALYTICAL REPORTS -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <span>📈 Level 2 — Analytical Reports</span>
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">
+        <button class="export-btn" onclick="exportLevel2DeliveryExcel()">
+          <span>⬇ Delivery Rate Report Excel</span>
+        </button>
+        <button class="export-btn" onclick="exportLevel2RevenueExcel()">
+          <span>⬇ Revenue Report Excel</span>
+        </button>
+        <button class="export-btn" onclick="exportLevel2FailureExcel()">
+          <span>⬇ Failure Analysis Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LEVEL 3: RESEARCH REPORTS -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <span>📋 Level 3 — Research Reports</span>
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">
+        <button class="export-btn" onclick="exportLevel3ExecutivePDF()">
+          <span>⬇ Executive Summary PDF</span>
+        </button>
+        <button class="export-btn" onclick="exportLevel3CollectorScorecardPDF()">
+          <span>⬇ Collector Scorecard PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- LEVEL 4: STATISTICAL ANALYSIS -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <span>🔬 Level 4 — Statistical Analysis</span>
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">
+        <button class="export-btn" onclick="exportLevel4SPSSCSV()">
+          <span>⬇ SPSS Ready CSV</span>
+        </button>
+        <button class="export-btn" onclick="exportLevel4CrossTabExcel()">
+          <span>⬇ Cross Tabulation Excel</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1112,69 +1192,748 @@
     });
   }
 
-  // --- EXPORT ---
-  function exportData(format) {
-    const start = document.getElementById('export-start').value;
-    const end = document.getElementById('export-end').value;
-    const sup = document.getElementById('export-sup').value;
-    
-    let flatData = [];
-    getFilteredLogs().forEach(l => {
-      if (start && l.date < start) return;
-      if (end && l.date > end) return;
-      if (sup && l.supervisor !== sup) return;
-      
-      if(l.bills) {
-        l.bills.forEach(b => {
+  // --- EXPORT & REPORTS SYSTEM ---
+  function getRawFlatData() {
+    var flatData = [];
+    allLogs.forEach(function(l) {
+      if (l.bills && Array.isArray(l.bills)) {
+        l.bills.forEach(function(b) {
           flatData.push({
-            Date: l.date,
-            Supervisor: l.supervisor,
-            Collector: l.collector,
-            Unit: l.collectorUnit,
-            AccountNumber: b.accountNumber,
-            UseType: b.useType,
-            BillAmount: b.billAmount,
-            Delivered: b.delivered,
-            RatepayerName: b.ratepayerName || '',
-            AmountPaid: b.amountPaid || 0,
-            ModeOfPayment: b.modeOfPayment || '',
-            ReceiptRef: b.receiptRef || '',
-            FailureReason: b.failureReason || b.otherReason || ''
+            "Date": l.date || "",
+            "Day": l.dayOfWeek || "",
+            "Supervisor": l.supervisor || "",
+            "Collector": l.collector || "",
+            "Unit": l.collectorUnit || "",
+            "Account Number": b.accountNumber || "",
+            "Rate Type": b.useType || "",
+            "Bill Amount": b.billAmount || 0,
+            "Delivered": b.delivered || "",
+            "Ratepayer Name": b.ratepayerName || "",
+            "Ratepayer Phone": b.ratepayerPhone || "",
+            "Amount Paid": b.amountPaid || 0,
+            "Mode of Payment": b.modeOfPayment || "",
+            "Receipt Ref": b.receiptRef || "",
+            "Failure Reason": b.failureReason || b.otherReason || ""
           });
         });
       }
     });
-    
-    if(flatData.length === 0) {
-      alert("No data found for selected filters.");
+    return flatData;
+  }
+
+  // Button 1: All Submissions CSV
+  function exportLevel1CSV() {
+    var data = getRawFlatData();
+    if (data.length === 0) {
+      alert("No data available to export.");
       return;
     }
+    var headers = ["Date", "Day", "Supervisor", "Collector", "Unit", "Account Number", "Rate Type", "Bill Amount", "Delivered", "Ratepayer Name", "Ratepayer Phone", "Amount Paid", "Mode of Payment", "Receipt Ref", "Failure Reason"];
+    var csvRows = [headers.join(",")];
+    
+    data.forEach(function(item) {
+      var row = [
+        item["Date"],
+        item["Day"],
+        item["Supervisor"],
+        item["Collector"],
+        item["Unit"],
+        item["Account Number"],
+        item["Rate Type"],
+        item["Bill Amount"],
+        item["Delivered"],
+        item["Ratepayer Name"],
+        item["Ratepayer Phone"],
+        item["Amount Paid"],
+        item["Mode of Payment"],
+        item["Receipt Ref"],
+        item["Failure Reason"]
+      ];
+      var escapedRow = row.map(function(val) {
+        var s = String(val).replace(/"/g, '""');
+        if (s.indexOf(',') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('"') >= 0) {
+          s = '"' + s + '"';
+        }
+        return s;
+      });
+      csvRows.push(escapedRow.join(","));
+    });
+    
+    var blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "all_submissions_raw.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
-    if (format === 'csv' || format === 'excel') {
-      const ws = XLSX.utils.json_to_sheet(flatData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "PropCollect Data");
-      
-      if (format === 'csv') {
-        XLSX.writeFile(wb, "PropCollect_Export.csv");
-      } else {
-        XLSX.writeFile(wb, "PropCollect_Export.xlsx");
+  // Button 2: All Submissions Excel
+  function exportLevel1Excel() {
+    var data = getRawFlatData();
+    if (data.length === 0) {
+      alert("No data available to export.");
+      return;
+    }
+    var deliveredOnly = data.filter(function(x) { return x["Delivered"] === 'yes'; });
+    var failedOnly = data.filter(function(x) { return x["Delivered"] === 'no'; });
+    
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), "All Data");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(deliveredOnly), "Delivered Only");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(failedOnly), "Failed Only");
+    
+    XLSX.writeFile(wb, "all_submissions_report.xlsx");
+  }
+
+  // Button 3: Collector Summary CSV
+  function exportLevel1CollectorCSV() {
+    var collectors = {};
+    for (var supName in supervisorData) {
+      supervisorData[supName].collectors.forEach(function(c) {
+        collectors[c.name] = {
+          name: c.name,
+          supervisor: supName,
+          unit: c.unit,
+          totalBills: 160,
+          submitted: 0,
+          delivered: 0,
+          failed: 0,
+          amount: 0
+        };
+      });
+    }
+    
+    allLogs.forEach(function(l) {
+      var c = collectors[l.collector];
+      if (!c) {
+        collectors[l.collector] = {
+          name: l.collector,
+          supervisor: l.supervisor || "",
+          unit: l.collectorUnit || "",
+          totalBills: 160,
+          submitted: 0,
+          delivered: 0,
+          failed: 0,
+          amount: 0
+        };
+        c = collectors[l.collector];
       }
-    } else if (format === 'pdf') {
-      const doc = new jspdf.jsPDF('landscape');
-      doc.text("PropCollect Data Export", 14, 15);
+      c.submitted += (l.totalBills || 0);
+      c.delivered += (l.totalDelivered || 0);
+      c.failed += (l.totalFailed || 0);
+      c.amount += (l.totalAmountCollected || 0);
+    });
+    
+    var headers = ["Collector Name", "Supervisor", "Unit", "Total Expected Bills", "Submitted Bills", "Delivered Bills", "Failed Bills", "Collection Rate %", "Total Amount Collected GHS"];
+    var csvRows = [headers.join(",")];
+    
+    for (var name in collectors) {
+      var col = collectors[name];
+      var rate = col.submitted > 0 ? ((col.delivered / col.submitted) * 100).toFixed(1) : "0.0";
       
-      const columns = Object.keys(flatData[0]);
-      const rows = flatData.map(obj => Object.values(obj).map(v => String(v)));
+      var row = [
+        col.name,
+        col.supervisor,
+        col.unit,
+        col.totalBills,
+        col.submitted,
+        col.delivered,
+        col.failed,
+        rate,
+        col.amount.toFixed(2)
+      ];
+      var escapedRow = row.map(function(val) {
+        var s = String(val).replace(/"/g, '""');
+        if (s.indexOf(',') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('"') >= 0) {
+          s = '"' + s + '"';
+        }
+        return s;
+      });
+      csvRows.push(escapedRow.join(","));
+    }
+    
+    var blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "collector_summary_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Button 4: Delivery Rate Report Excel
+  function exportLevel2DeliveryExcel() {
+    var supStats = {};
+    var colStats = {};
+    var rateTypeStats = { "BOP": { total: 0, del: 0 }, "Property Rate": { total: 0, del: 0 } };
+    var dayStats = {};
+    
+    allLogs.forEach(function(l) {
+      var supName = l.supervisor;
+      var colName = l.collector;
+      var day = l.date;
+      
+      if (!supStats[supName]) supStats[supName] = { total: 0, del: 0 };
+      if (!colStats[colName]) colStats[colName] = { total: 0, del: 0, supervisor: supName };
+      if (!dayStats[day]) dayStats[day] = { total: 0, del: 0 };
+      
+      supStats[supName].total += (l.totalBills || 0);
+      supStats[supName].del += (l.totalDelivered || 0);
+      
+      colStats[colName].total += (l.totalBills || 0);
+      colStats[colName].del += (l.totalDelivered || 0);
+      
+      dayStats[day].total += (l.totalBills || 0);
+      dayStats[day].del += (l.totalDelivered || 0);
+      
+      if (l.bills && Array.isArray(l.bills)) {
+        l.bills.forEach(function(b) {
+          var rt = b.useType === 'RP' || b.useType === 'Property Rate' ? 'Property Rate' : 'BOP';
+          if (!rateTypeStats[rt]) rateTypeStats[rt] = { total: 0, del: 0 };
+          rateTypeStats[rt].total += 1;
+          if (b.delivered === 'yes') {
+            rateTypeStats[rt].del += 1;
+          }
+        });
+      }
+    });
+    
+    var supRows = [];
+    for (var s in supStats) {
+      supRows.push({
+        "Supervisor": s,
+        "Total Bills": supStats[s].total,
+        "Delivered Bills": supStats[s].del,
+        "Delivery Rate %": supStats[s].total > 0 ? ((supStats[s].del / supStats[s].total) * 100).toFixed(1) + "%" : "0%"
+      });
+    }
+    
+    var colRows = [];
+    for (var c in colStats) {
+      colRows.push({
+        "Collector": c,
+        "Supervisor": colStats[c].supervisor,
+        "Total Bills": colStats[c].total,
+        "Delivered Bills": colStats[c].del,
+        "Delivery Rate %": colStats[c].total > 0 ? ((colStats[c].del / colStats[c].total) * 100).toFixed(1) + "%" : "0%"
+      });
+    }
+    
+    var rtRows = [];
+    for (var r in rateTypeStats) {
+      rtRows.push({
+        "Rate Type": r,
+        "Total Bills": rateTypeStats[r].total,
+        "Delivered Bills": rateTypeStats[r].del,
+        "Delivery Rate %": rateTypeStats[r].total > 0 ? ((rateTypeStats[r].del / rateTypeStats[r].total) * 100).toFixed(1) + "%" : "0%"
+      });
+    }
+    
+    var dayRows = [];
+    for (var d in dayStats) {
+      dayRows.push({
+        "Date": d,
+        "Total Expected Bills": dayStats[d].total,
+        "Delivered Bills": dayStats[d].del,
+        "Delivery Rate %": dayStats[d].total > 0 ? ((dayStats[d].del / dayStats[d].total) * 100).toFixed(1) + "%" : "0%"
+      });
+    }
+    
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(supRows), "By Supervisor");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(colRows), "By Collector");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rtRows), "By Rate Type");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dayRows), "By Day Trend");
+    
+    XLSX.writeFile(wb, "delivery_performance_rates.xlsx");
+  }
+
+  // Button 5: Revenue Report Excel
+  function exportLevel2RevenueExcel() {
+    var billedTotal = 0, collectedTotal = 0;
+    var supStats = {};
+    var colStats = {};
+    var modeStats = {};
+    
+    allLogs.forEach(function(l) {
+      var supName = l.supervisor;
+      var colName = l.collector;
+      
+      if (!supStats[supName]) supStats[supName] = { billed: 0, collected: 0 };
+      if (!colStats[colName]) colStats[colName] = { billed: 0, collected: 0, supervisor: supName };
+      
+      collectedTotal += (l.totalAmountCollected || 0);
+      supStats[supName].collected += (l.totalAmountCollected || 0);
+      colStats[colName].collected += (l.totalAmountCollected || 0);
+      
+      if (l.bills && Array.isArray(l.bills)) {
+        l.bills.forEach(function(b) {
+          var billAmt = parseFloat(b.billAmount || 0);
+          var paidAmt = parseFloat(b.amountPaid || 0);
+          billedTotal += billAmt;
+          supStats[supName].billed += billAmt;
+          colStats[colName].billed += billAmt;
+          
+          if (b.delivered === 'yes' && b.modeOfPayment) {
+            var mode = b.modeOfPayment;
+            if (!modeStats[mode]) modeStats[mode] = { count: 0, amount: 0 };
+            modeStats[mode].count += 1;
+            modeStats[mode].amount += paidAmt;
+          }
+        });
+      }
+    });
+    
+    var totalRows = [{
+      "Total Billed (GHS)": billedTotal.toFixed(2),
+      "Total Collected (GHS)": collectedTotal.toFixed(2),
+      "Collection Efficiency %": billedTotal > 0 ? ((collectedTotal / billedTotal) * 100).toFixed(1) + "%" : "0%"
+    }];
+    
+    var supRows = [];
+    for (var s in supStats) {
+      supRows.push({
+        "Supervisor": s,
+        "Billed Amount (GHS)": supStats[s].billed.toFixed(2),
+        "Collected Amount (GHS)": supStats[s].collected.toFixed(2),
+        "Efficiency %": supStats[s].billed > 0 ? ((supStats[s].collected / supStats[s].billed) * 100).toFixed(1) + "%" : "0%"
+      });
+    }
+    
+    var colRows = [];
+    for (var c in colStats) {
+      colRows.push({
+        "Collector": c,
+        "Supervisor": colStats[c].supervisor,
+        "Billed Amount (GHS)": colStats[c].billed.toFixed(2),
+        "Collected Amount (GHS)": colStats[c].collected.toFixed(2),
+        "Efficiency %": colStats[c].billed > 0 ? ((colStats[c].collected / colStats[c].billed) * 100).toFixed(1) + "%" : "0%"
+      });
+    }
+    
+    var modeRows = [];
+    for (var m in modeStats) {
+      modeRows.push({
+        "Payment Mode": m,
+        "Transactions Count": modeStats[m].count,
+        "Total Amount (GHS)": modeStats[m].amount.toFixed(2)
+      });
+    }
+    
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(totalRows), "Global Overview");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(supRows), "By Supervisor");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(colRows), "By Collector");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(modeRows), "Payment Mode Analysis");
+    
+    XLSX.writeFile(wb, "revenue_performance_report.xlsx");
+  }
+
+  // Button 6: Failure Analysis Excel
+  function exportLevel2FailureExcel() {
+    var failedBills = [];
+    var reasonStats = {};
+    var colStats = {};
+    var supStats = {};
+    
+    allLogs.forEach(function(l) {
+      if (l.bills && Array.isArray(l.bills)) {
+        l.bills.forEach(function(b) {
+          if (b.delivered === 'no') {
+            var reason = b.failureReason || b.otherReason || "Wrong Address";
+            
+            failedBills.push({
+              "Date": l.date || "",
+              "Supervisor": l.supervisor || "",
+              "Collector": l.collector || "",
+              "Unit": l.collectorUnit || "",
+              "Account Number": b.accountNumber || "",
+              "Bill Amount": b.billAmount || 0,
+              "Failure Reason": reason
+            });
+            
+            reasonStats[reason] = (reasonStats[reason] || 0) + 1;
+            colStats[l.collector] = (colStats[l.collector] || 0) + 1;
+            supStats[l.supervisor] = (supStats[l.supervisor] || 0) + 1;
+          }
+        });
+      }
+    });
+    
+    var reasonRows = [];
+    for (var r in reasonStats) {
+      reasonRows.push({ "Failure Reason": r, "Failures Count": reasonStats[r] });
+    }
+    
+    var colRows = [];
+    for (var c in colStats) {
+      colRows.push({ "Collector": c, "Failures Count": colStats[c] });
+    }
+    
+    var supRows = [];
+    for (var s in supStats) {
+      supRows.push({ "Supervisor": s, "Failures Count": supStats[s] });
+    }
+    
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(failedBills), "All Failures List");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reasonRows), "By Failure Reason");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(colRows), "By Collector");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(supRows), "By Supervisor");
+    
+    XLSX.writeFile(wb, "delivery_failure_analysis.xlsx");
+  }
+
+  // Button 7: Executive Summary PDF
+  function exportLevel3ExecutivePDF() {
+    var doc = new window.jspdf.jsPDF();
+    
+    // Header
+    doc.setFillColor(10, 22, 40); // Navy
+    doc.rect(0, 0, 220, 40, 'F');
+    
+    doc.setTextColor(252, 209, 22); // Gold
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("PropCollect Ghana", 14, 18);
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("RESEARCH EXECUTIVE SUMMARY REPORT", 14, 28);
+    doc.text("Date Generated: " + new Date().toLocaleDateString('en-GB'), 150, 28);
+    
+    var totalBills = 0, delivered = 0, failed = 0, revenue = 0;
+    var colStats = {};
+    var failedReasons = {};
+    var supStats = {};
+    
+    allLogs.forEach(function(l) {
+      totalBills += (l.totalBills || 0);
+      delivered += (l.totalDelivered || 0);
+      failed += (l.totalFailed || 0);
+      revenue += (l.totalAmountCollected || 0);
+      
+      var c = colStats[l.collector] || { name: l.collector, supervisor: l.supervisor, delivered: 0, failed: 0, revenue: 0 };
+      c.delivered += (l.totalDelivered || 0);
+      c.failed += (l.totalFailed || 0);
+      c.revenue += (l.totalAmountCollected || 0);
+      colStats[l.collector] = c;
+      
+      var s = supStats[l.supervisor] || { name: l.supervisor, total: 0, delivered: 0, revenue: 0 };
+      s.total += (l.totalBills || 0);
+      s.delivered += (l.totalDelivered || 0);
+      s.revenue += (l.totalAmountCollected || 0);
+      supStats[l.supervisor] = s;
+    });
+    
+    var deliveryRate = totalBills > 0 ? ((delivered / totalBills) * 100).toFixed(1) + "%" : "0%";
+    
+    doc.setTextColor(10, 22, 40);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("1. Executive Core Metrics", 14, 52);
+    
+    var metricsHeaders = [["Metric", "Value"]];
+    var metricsRows = [
+      ["Total Submitted Bills Expected", String(totalBills)],
+      ["Successfully Delivered Bills", String(delivered)],
+      ["Failed Deliveries", String(failed)],
+      ["Delivery Rate Percentage", deliveryRate],
+      ["Total Revenue Collected (GHS)", "GHS " + revenue.toFixed(2)]
+    ];
+    
+    doc.autoTable({
+      startY: 56,
+      head: metricsHeaders,
+      body: metricsRows,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 107, 63] }
+    });
+    
+    doc.setFontSize(14);
+    doc.text("2. Top Performing Collectors (by Revenue)", 14, doc.lastAutoTable.finalY + 15);
+    
+    var sortedColStats = Object.values(colStats).sort(function(a,b) { return b.revenue - a.revenue; }).slice(0, 5);
+    var colHeaders = [["Collector", "Supervisor", "Delivered", "Failed", "Revenue"]];
+    var colRows = sortedColStats.map(function(c) {
+      return [
+        c.name,
+        c.supervisor,
+        String(c.delivered),
+        String(c.failed),
+        "GHS " + c.revenue.toFixed(2)
+      ];
+    });
+    
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 20,
+      head: colHeaders,
+      body: colRows,
+      theme: 'striped',
+      headStyles: { fillColor: [10, 22, 40] }
+    });
+    
+    doc.setFontSize(14);
+    doc.text("3. Supervisor Comparison Table", 14, doc.lastAutoTable.finalY + 15);
+    
+    var supHeaders = [["Supervisor", "Total Expected", "Delivered", "Delivery Rate", "Revenue"]];
+    var supRows = Object.values(supStats).map(function(s) {
+      return [
+        s.name,
+        String(s.total),
+        String(s.delivered),
+        s.total > 0 ? ((s.delivered / s.total) * 100).toFixed(1) + "%" : "0%",
+        "GHS " + s.revenue.toFixed(2)
+      ];
+    });
+    
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 20,
+      head: supHeaders,
+      body: supRows,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 107, 63] }
+    });
+    
+    doc.save("PropCollect_Executive_Summary.pdf");
+  }
+
+  // Button 8: Collector Scorecard PDF
+  function exportLevel3CollectorScorecardPDF() {
+    var doc = new window.jspdf.jsPDF();
+    var colStats = {};
+    
+    allLogs.forEach(function(l) {
+      var c = colStats[l.collector] || {
+        name: l.collector,
+        supervisor: l.supervisor,
+        unit: l.collectorUnit,
+        total: 0,
+        delivered: 0,
+        failed: 0,
+        revenue: 0,
+        cash: 0,
+        momo: 0,
+        otherPay: 0
+      };
+      c.total += (l.totalBills || 0);
+      c.delivered += (l.totalDelivered || 0);
+      c.failed += (l.totalFailed || 0);
+      c.revenue += (l.totalAmountCollected || 0);
+      
+      if (l.bills) {
+        l.bills.forEach(function(b) {
+          if (b.delivered === 'yes') {
+            var val = parseFloat(b.amountPaid || 0);
+            if (b.modeOfPayment === 'Cash') c.cash += val;
+            else if (b.modeOfPayment === 'Mobile Money') c.momo += val;
+            else c.otherPay += val;
+          }
+        });
+      }
+      colStats[l.collector] = c;
+    });
+    
+    var collectorsList = Object.values(colStats);
+    if (collectorsList.length === 0) {
+      alert("No collector records found to generate scorecards.");
+      return;
+    }
+    
+    collectorsList.forEach(function(c, index) {
+      if (index > 0) doc.addPage();
+      
+      doc.setFillColor(10, 22, 40);
+      doc.rect(0, 0, 220, 35, 'F');
+      
+      doc.setTextColor(252, 209, 22);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("PropCollect Collector Scorecard", 14, 15);
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("OFFICIAL PERFORMANCE EVALUATION SHEET", 14, 25);
+      
+      doc.setTextColor(10, 22, 40);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Collector Profile", 14, 48);
+      
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Name: " + c.name, 14, 56);
+      doc.text("Supervisor: " + c.supervisor, 14, 62);
+      doc.text("Unit Assigned: Unit " + c.unit, 14, 68);
+      
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("Performance Indicators Summary", 14, 82);
+      
+      var headers = [["Metric", "Value"]];
+      var rate = c.total > 0 ? ((c.delivered / c.total) * 100).toFixed(1) + "%" : "0%";
+      var rows = [
+        ["Total Bills Handled", String(c.total)],
+        ["Successfully Delivered", String(c.delivered)],
+        ["Failed Deliveries", String(c.failed)],
+        ["Delivery Success Rate", rate],
+        ["Total Revenue Collected", "GHS " + c.revenue.toFixed(2)],
+        ["Collected via Cash", "GHS " + c.cash.toFixed(2)],
+        ["Collected via Mobile Money", "GHS " + c.momo.toFixed(2)],
+        ["Collected via Cheque / Bank Transfer", "GHS " + c.otherPay.toFixed(2)]
+      ];
       
       doc.autoTable({
-        head: [columns],
+        startY: 86,
+        head: headers,
         body: rows,
-        startY: 20,
-        styles: { fontSize: 8 }
+        theme: 'grid',
+        headStyles: { fillColor: [0, 107, 63] },
+        columnStyles: { 0: { fontStyle: 'bold' } }
       });
-      doc.save('PropCollect_Export.pdf');
+      
+      var finalY = doc.lastAutoTable.finalY + 25;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Supervisor Signature: _______________________", 14, finalY);
+      doc.text("Researcher Reviewer: _______________________", 120, finalY);
+    });
+    
+    doc.save("PropCollect_Collector_Scorecards.pdf");
+  }
+
+  // Button 9: SPSS Ready CSV
+  function exportLevel4SPSSCSV() {
+    var headers = ["accountNumber", "delivered", "rateType", "supervisor", "paymentMode", "billAmount", "amountPaid"];
+    var csvRows = [headers.join(",")];
+    
+    allLogs.forEach(function(l) {
+      if (l.bills) {
+        l.bills.forEach(function(b) {
+          var sCode = 1;
+          if (l.supervisor === "Abevi Felix Vifah") sCode = 2;
+          else if (l.supervisor === "Linda Arthur") sCode = 3;
+          
+          var dCode = b.delivered === 'yes' ? 1 : 0;
+          var rCode = b.useType === 'RP' || b.useType === 'Property Rate' ? 2 : 1;
+          
+          var pCode = 0;
+          if (b.delivered === 'yes') {
+            if (b.modeOfPayment === 'Cash') pCode = 1;
+            else if (b.modeOfPayment === 'Mobile Money') pCode = 2;
+            else if (b.modeOfPayment === 'Cheque') pCode = 3;
+            else if (b.modeOfPayment === 'Bank Transfer') pCode = 4;
+          }
+          
+          var row = [
+            b.accountNumber || "",
+            dCode,
+            rCode,
+            sCode,
+            pCode,
+            b.billAmount || 0,
+            b.amountPaid || 0
+          ];
+          csvRows.push(row.join(","));
+        });
+      }
+    });
+    
+    csvRows.push("");
+    csvRows.push("--- SPSS VARIABLES CODEBOOK ---");
+    csvRows.push("delivered: 1=yes, 0=no");
+    csvRows.push("rateType: 1=BOP, 2=Property Rate");
+    csvRows.push("supervisor: 1=Afua Tenkorang, 2=Abevi Felix Vifah, 3=Linda Arthur");
+    csvRows.push("paymentMode: 1=cash, 2=momo, 3=cheque, 4=bank transfer, 0=undelivered/none");
+    
+    var blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "spss_encoded_dataset.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Button 10: Cross Tabulation Excel
+  function exportLevel4CrossTabExcel() {
+    var delType = { "yes": { "BOP": 0, "Property Rate": 0 }, "no": { "BOP": 0, "Property Rate": 0 } };
+    var delSup = { "yes": {}, "no": {} };
+    var delDay = { "yes": {}, "no": {} };
+    var payType = { "Cash": { "BOP": 0, "Property Rate": 0 }, "Mobile Money": { "BOP": 0, "Property Rate": 0 }, "Bank Transfer": { "BOP": 0, "Property Rate": 0 }, "Cheque": { "BOP": 0, "Property Rate": 0 } };
+    
+    allLogs.forEach(function(l) {
+      var sup = l.supervisor;
+      var day = l.dayOfWeek || "Unknown";
+      
+      if (l.bills) {
+        l.bills.forEach(function(b) {
+          var rt = b.useType === 'RP' || b.useType === 'Property Rate' ? 'Property Rate' : 'BOP';
+          var del = b.delivered;
+          
+          if (del === 'yes' || del === 'no') {
+            delType[del][rt] += 1;
+            
+            if (!delSup[del][sup]) delSup[del][sup] = 0;
+            delSup[del][sup] += 1;
+            
+            if (!delDay[del][day]) delDay[del][day] = 0;
+            delDay[del][day] += 1;
+            
+            if (del === 'yes' && b.modeOfPayment) {
+              var mop = b.modeOfPayment;
+              if (!payType[mop]) payType[mop] = { "BOP": 0, "Property Rate": 0 };
+              payType[mop][rt] += 1;
+            }
+          }
+        });
+      }
+    });
+    
+    var t1 = [
+      { "Delivered Status": "Yes", "BOP": delType["yes"]["BOP"], "Property Rate": delType["yes"]["Property Rate"] },
+      { "Delivered Status": "No", "BOP": delType["no"]["BOP"], "Property Rate": delType["no"]["Property Rate"] }
+    ];
+    
+    var t2 = [];
+    var sups = ["Afua Tenkorang", "Abevi Felix Vifah", "Linda Arthur"];
+    sups.forEach(function(s) {
+      t2.push({
+        "Supervisor": s,
+        "Delivered (Yes)": delSup["yes"][s] || 0,
+        "Undelivered (No)": delSup["no"][s] || 0
+      });
+    });
+    
+    var t3 = [];
+    var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    days.forEach(function(d) {
+      t3.push({
+        "Day of Week": d,
+        "Delivered (Yes)": delDay["yes"][d] || 0,
+        "Undelivered (No)": delDay["no"][d] || 0
+      });
+    });
+    
+    var t4 = [];
+    for (var m in payType) {
+      t4.push({
+        "Payment Mode": m,
+        "BOP": payType[m]["BOP"],
+        "Property Rate": payType[m]["Property Rate"]
+      });
     }
+    
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(t1), "Delivered vs Rate Type");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(t2), "Delivered vs Supervisor");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(t3), "Delivered vs Day of Week");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(t4), "Payment Mode vs Rate Type");
+    
+    XLSX.writeFile(wb, "research_cross_tabulations.xlsx");
   }
 
   // --- MOCK DATA GENERATOR (For demo) ---
