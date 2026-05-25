@@ -684,6 +684,8 @@
           <div class="progress-bar-fill" id="progressBar"></div>
         </div>
       </div>
+      <!-- Cache Status Indicator -->
+      <div id="cacheStatusIndicator" style="display:none; font-size:12px; margin-top:8px; font-weight:600; text-align:center;"></div>
 
       <div id="billsLoading" style="display:none; text-align:center;padding:40px;">
         <div style="font-size:40px;">⏳</div>
@@ -957,6 +959,7 @@
           expires: Date.now() + (24 * 60 * 60 * 1000)
         }));
         setupStep1();
+        preloadAllCollectorBills();
       } else {
         document.getElementById('pin-error').style.display = 'block';
         document.getElementById('supervisor-pin').value = '';
@@ -1079,19 +1082,36 @@
       var state = window.state;
       var loadingEl = document.getElementById('billsLoading');
       var container = document.getElementById('bills-container');
+      var indicator = document.getElementById('cacheStatusIndicator');
 
       if (loadingEl) loadingEl.style.display = 'block';
       if (container) container.innerHTML = '';
       state.bills = [];
 
+      // FIX 3: Show loading from server indicator
+      if (indicator) {
+        indicator.innerHTML = '⏳ Loading from server...';
+        indicator.style.color = '#64748b';
+        indicator.style.display = 'block';
+      }
+
+      // FIX 1: Aggressive Caching (sessionStorage AND localStorage)
       var cacheKey = 'bills_' + collectorName + '_' + unit;
-      var cached = sessionStorage.getItem(cacheKey);
+      var cached = sessionStorage.getItem(cacheKey) || localStorage.getItem(cacheKey);
       if (cached) {
         try {
           var cachedBills = JSON.parse(cached);
           if (cachedBills && cachedBills.length > 0) {
             state.bills = cachedBills;
             if (loadingEl) loadingEl.style.display = 'none';
+            
+            // FIX 3: Show cached indicator in green text
+            if (indicator) {
+              indicator.innerHTML = '⚡ Loaded instantly from cache';
+              indicator.style.color = '#15803d';
+              indicator.style.display = 'block';
+            }
+            
             renderBillCards();
             return;
           }
@@ -1103,11 +1123,20 @@
         if (loadingEl) loadingEl.style.display = 'none';
         var bills = (data && data.bills) ? data.bills : [];
         if (bills.length > 0) {
-          sessionStorage.setItem(cacheKey,
-            JSON.stringify(bills));
+          // Store in both cache storage layers
+          sessionStorage.setItem(cacheKey, JSON.stringify(bills));
+          localStorage.setItem(cacheKey, JSON.stringify(bills));
+          
           state.bills = bills;
+          
+          // Hide cache status indicator on successful fetch
+          if (indicator) {
+            indicator.style.display = 'none';
+          }
+          
           renderBillCards();
         } else {
+          if (indicator) indicator.style.display = 'none';
           if (container) {
             container.innerHTML =
               '<div style="text-align:center;padding:40px;">' +
@@ -1135,6 +1164,7 @@
 
       script.onerror = function () {
         if (loadingEl) loadingEl.style.display = 'none';
+        if (indicator) indicator.style.display = 'none';
         if (container) {
           container.innerHTML =
             '<div style="text-align:center;padding:40px;' +
@@ -1150,6 +1180,50 @@
       };
 
       document.head.appendChild(script);
+    }
+
+    // FIX 2: Preload ALL collectors on supervisor login
+    function preloadAllCollectorBills() {
+      var sup = supervisorData[state.supervisor];
+      if (!sup || !sup.collectors) return;
+      
+      var collectors = sup.collectors;
+      var index = 0;
+      
+      function loadNext() {
+        if (index >= collectors.length) return;
+        var c = collectors[index];
+        index++;
+        
+        var cacheKey = 'bills_' + c.name + '_' + c.unit;
+        var cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          loadNext();
+          return;
+        }
+        
+        window['preloadCb_' + c.unit] = function(data) {
+          delete window['preloadCb_' + c.unit];
+          if (data && data.bills && data.bills.length > 0) {
+            localStorage.setItem(cacheKey, JSON.stringify(data.bills));
+          }
+          setTimeout(loadNext, 500);
+        };
+        
+        var script = document.createElement('script');
+        script.src = SCRIPT_URL +
+          '?action=getBills' +
+          '&collector=' + encodeURIComponent(c.name) +
+          '&unit=' + c.unit +
+          '&callback=preloadCb_' + c.unit;
+        script.onerror = function() {
+          delete window['preloadCb_' + c.unit];
+          setTimeout(loadNext, 500);
+        };
+        document.head.appendChild(script);
+      }
+      
+      setTimeout(loadNext, 2000);
     }
 
     function renderBillCards() {
@@ -1727,6 +1801,7 @@
             currentSupervisor = session.supervisor;
             initLanding();
             setupStep1();
+            preloadAllCollectorBills();
             return;
           }
         } catch (e) { }
