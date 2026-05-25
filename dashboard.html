@@ -354,7 +354,7 @@
             <tr>
               <th>Name</th><th>Unit</th><th>Supervisor</th>
               <th>Bills</th><th>Delivered</th><th>Failed</th>
-              <th>Rate %</th><th>Amount (GHS)</th><th>Status</th>
+              <th>Rate %</th><th>Amount (GHS)</th><th>Last Updated</th><th>Status</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -1467,7 +1467,11 @@
     let arr = Object.values(cMap);
     if (search) arr = arr.filter(c => c.name.toLowerCase().includes(search) || c.sup.toLowerCase().includes(search));
     
-    arr.sort((a,b) => b.amt - a.amt); // sort by amount desc
+    arr.sort((a,b) => {
+      let dateA = a.last ? new Date(a.last) : new Date(0);
+      let dateB = b.last ? new Date(b.last) : new Date(0);
+      return dateB - dateA;
+    });
     
     let html = '';
     arr.forEach(c => {
@@ -1489,12 +1493,21 @@
           <a href="${formatWhatsApp(phone)}" target="_blank" style="padding:4px 8px;background:#006B3F;color:white;border-radius:4px;text-decoration:none;font-size:12px;">💬</a>
         </div>`;
       }
+
+      let lastUpdatedStr = 'Never';
+      if (c.last) {
+        let d = new Date(c.last);
+        lastUpdatedStr = d.toLocaleDateString();
+        if (isToday(c.last)) {
+          lastUpdatedStr += ' <span class="badge badge-green" style="font-size:10px; padding:2px 6px; white-space:nowrap;">🕐 Just Now</span>';
+        }
+      }
       
       html += `<tr>
         <td><strong>${c.name}</strong></td><td>Unit ${c.unit}</td><td>${c.sup}</td>
         <td>${c.bills}</td><td>${c.deliv}</td><td>${c.failed}</td>
         <td>${rate}%</td><td>GHS ${c.amt.toFixed(2)}</td>
-        <td><small>${c.last ? new Date(c.last).toLocaleDateString() : 'N/A'}</small></td>
+        <td><small>${lastUpdatedStr}</small></td>
         <td>${status}</td>
         <td>${actions}</td>
       </tr>`;
