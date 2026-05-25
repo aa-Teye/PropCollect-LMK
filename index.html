@@ -891,6 +891,7 @@
     let currentSupervisor = "";
     let currentCollector = null;
     let formBills = [];
+    let allLogs = [];
 
     var totalBills = 0;
     var submittedCount = 0;
@@ -961,6 +962,7 @@
         }));
         setupStep1();
         preloadAllCollectorBills();
+        fetchDailyLogs();
       } else {
         document.getElementById('pin-error').style.display = 'block';
         document.getElementById('supervisor-pin').value = '';
@@ -1105,6 +1107,47 @@
 
     function preloadAllCollectorBills() {
       // Offline mode - all bills already loaded locally
+    }
+
+    function fetchDailyLogs() {
+      window.onLogsLoaded = function(data) {
+        if (data && data.logs) {
+          allLogs = data.logs.map(function(item) {
+            return {
+              date: item.date,
+              day: item.day,
+              time: item.time,
+              supervisor: item.supervisor,
+              collector: item.collector,
+              unit: item.unit,
+              phone: item.phone,
+              accountNumber: item.accountNumber || item.billNumber,
+              useType: item.useType,
+              billAmount: parseFloat(item.billAmount || item.amount || 0),
+              delivered: item.delivered || item.status,
+              ratepayerName: item.ratepayerName,
+              ratepayerPhone: item.ratepayerPhone,
+              amountPaid: parseFloat(item.amountPaid || item.collected || 0),
+              modeOfPayment: item.modeOfPayment,
+              receiptRef: item.receiptRef,
+              failureReason: item.failureReason,
+              otherReason: item.otherReason,
+              attemptNumber: item.attemptNumber ? parseInt(item.attemptNumber) : 1
+            };
+          });
+        }
+      };
+
+      var old = document.getElementById('logsScript');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+
+      var script = document.createElement('script');
+      script.id = 'logsScript';
+      script.src = SCRIPT_URL + '?action=getDailyLogs&callback=onLogsLoaded';
+      script.onerror = function() {
+        console.error('Failed to load logs');
+      };
+      document.head.appendChild(script);
     }
 
     function renderBillCards() {
@@ -1380,7 +1423,27 @@
         return;
       }
 
+      var previousAttempts = allLogs ? 
+        allLogs.filter(function(l) {
+          return l.accountNumber === b.accountNumber &&
+            l.collector === currentCollector.name;
+        }).length : 0;
+
+      var attemptNumber = previousAttempts + 1;
+
+      var attemptHtml = '';
+      if (attemptNumber > 1) {
+        attemptHtml = `<p style="color:#f97316; font-weight:600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          <span>⚠ This is attempt #${attemptNumber} for this bill</span>
+        </p>`;
+      } else {
+        attemptHtml = `<p style="color:#64748b; font-size:13px; margin-bottom: 12px;">
+          <span>Attempt #${attemptNumber} for this bill</span>
+        </p>`;
+      }
+
       let detailsHtml = `
+      ${attemptHtml}
       <p><strong>Account Number:</strong> ${b.accountNumber}</p>
       <p><strong>Use Type:</strong> <span class="badge" style="background:#fcd116; color:#000; padding:2px 6px; border-radius:4px;">${b.rateType}</span></p>
       <p><strong>Bill Amount:</strong> GHS ${parseFloat(b.currentBill || 0).toFixed(2)}</p>
@@ -1438,44 +1501,63 @@
     function submitSingleBill(idx) {
       const b = formBills[idx];
 
-      const payload = {
-        action: "submitDailyLog",
-        supervisor: currentSupervisor,
-        collector: currentCollector.name,
-        collectorUnit: currentCollector.unit,
-        collectorPhone: currentCollector.phone || "",
-        date: document.getElementById('dateInput').value,
-        dayOfWeek: new Date(document.getElementById('dateInput').value).toLocaleDateString('en-US', { weekday: 'long' }),
-        submissionTime: new Date().toISOString(),
-        bills: [],
-        totalBills: 1,
-        totalDelivered: b.delivered === 'yes' ? 1 : 0,
-        totalFailed: b.delivered === 'no' ? 1 : 0,
-        totalAmountCollected: 0
-      };
+      var previousAttempts = allLogs ? 
+        allLogs.filter(function(l) {
+          return l.accountNumber === b.accountNumber &&
+            l.collector === currentCollector.name;
+        }).length : 0;
 
-      const billPayload = {
-        accountNumber: b.accountNumber,
-        useType: b.rateType,
-        billAmount: b.currentBill,
-        delivered: b.delivered
-      };
+      var attemptNumber = previousAttempts + 1;
+
+      var dayOfWeek = new Date(document.getElementById('dateInput').value).toLocaleDateString('en-US', { weekday: 'long' });
+      var submissionTime = new Date().toISOString();
+
+      var rName = '';
+      var rPhone = '';
+      var amtPaid = 0;
+      var paymentMode = '';
+      var refNumber = '';
+      var failReason = '';
 
       if (b.delivered === 'yes') {
-        billPayload.ratepayerName = document.getElementById(`rp-name-${idx}`).value;
-        billPayload.ratepayerPhone = document.getElementById(`rp-phone-${idx}`).value;
-        billPayload.amountPaid = parseFloat(document.getElementById(`rp-amount-${idx}`).value);
-        billPayload.modeOfPayment = document.getElementById(`rp-mode-${idx}`).value;
-        billPayload.receiptRef = document.getElementById(`rp-receipt-${idx}`).value;
-        payload.totalAmountCollected = billPayload.amountPaid;
+        rName = document.getElementById(`rp-name-${idx}`).value.trim();
+        rPhone = document.getElementById(`rp-phone-${idx}`).value.trim();
+        amtPaid = parseFloat(document.getElementById(`rp-amount-${idx}`).value) || 0;
+        paymentMode = document.getElementById(`rp-mode-${idx}`).value;
+        refNumber = document.getElementById(`rp-receipt-${idx}`).value.trim();
       } else {
-        billPayload.failureReason = document.getElementById(`rp-reason-${idx}`).value;
-        if (billPayload.failureReason === 'Other') {
-          billPayload.otherReason = document.getElementById(`rp-other-${idx}`).value;
+        var reason = document.getElementById(`rp-reason-${idx}`).value;
+        if (reason === 'Other') {
+          failReason = document.getElementById(`rp-other-${idx}`).value.trim();
+        } else {
+          failReason = reason;
         }
       }
 
-      payload.bills.push(billPayload);
+      const payload = {
+        action: 'submitDailyLog',
+        supervisor: currentSupervisor,
+        collector: currentCollector.name,
+        collectorUnit: currentCollector.unit,
+        collectorPhone: currentCollector.phone || '',
+        date: document.getElementById('dateInput').value,
+        dayOfWeek: dayOfWeek,
+        submissionTime: submissionTime,
+        bills: [{
+          accountNumber: b.accountNumber,
+          useType: b.rateType,
+          billAmount: b.currentBill,
+          delivered: b.delivered,
+          ratepayerName: rName,
+          ratepayerPhone: rPhone,
+          amountPaid: amtPaid,
+          modeOfPayment: paymentMode,
+          receiptRef: refNumber,
+          failureReason: failReason,
+          attemptNumber: attemptNumber,
+          arm: b.arm || ''
+        }]
+      };
 
       closeReviewModal();
       document.getElementById('loading').style.display = 'block';
@@ -1488,6 +1570,26 @@
       }).then(() => {
         document.getElementById('loading').style.display = 'none';
         b.submitted = true;
+
+        // Push new log to local database for instant update in current session
+        allLogs.push({
+          date: document.getElementById('dateInput').value,
+          supervisor: currentSupervisor,
+          collector: currentCollector.name,
+          unit: currentCollector.unit,
+          phone: currentCollector.phone || '',
+          accountNumber: b.accountNumber,
+          useType: b.rateType,
+          billAmount: b.currentBill,
+          delivered: b.delivered,
+          ratepayerName: rName,
+          ratepayerPhone: rPhone,
+          amountPaid: amtPaid,
+          modeOfPayment: paymentMode,
+          receiptRef: refNumber,
+          failureReason: failReason,
+          attemptNumber: attemptNumber
+        });
 
         var dateStr = new Date().toLocaleDateString('en-GB');
         var submittedBills = JSON.parse(sessionStorage.getItem('submittedBills') || '{}');
@@ -1729,6 +1831,7 @@
             initLanding();
             setupStep1();
             preloadAllCollectorBills();
+            fetchDailyLogs();
             return;
           }
         } catch (e) { }
