@@ -461,134 +461,43 @@
       <p style="color:#64748b; margin-bottom: 0;">Generate and download real-time records, structured research documents, and analytical sheets compiled from all logs.</p>
     </div>
 
-    <!-- LEVEL 1: RAW DATA -->
+    <!-- MAIN REPORTS GRID -->
     <div class="card" style="margin-bottom: 20px;">
       <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-        <span>📁 Level 1 — Raw Data</span>
+        <span>📁 Report Downloads</span>
       </h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 15px;">
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel1CSV()">
-            <span>⬇ All Submissions CSV</span>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-top: 20px;">
+        
+        <!-- Button 1: All Bills Report -->
+        <div style="display: flex; flex-direction: column; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <button class="export-btn" onclick="exportAllBillsReport()" style="background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">
+            <span>📄 All Bills Report</span>
           </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Complete record of all bill delivery attempts. Best for Excel analysis."
+          <div style="font-size: 13px; color: #64748b; margin-top: 10px; font-style: italic; line-height: 1.4;">
+            "Every bill in the database (11,040 records) detailing its dynamic delivery status, exact attempts count, total paid, and last attempt dates."
           </div>
         </div>
         
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel1Excel()">
-            <span>⬇ All Submissions Excel</span>
+        <!-- Button 2: Collector Summary -->
+        <div style="display: flex; flex-direction: column; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <button class="export-btn" onclick="exportLevel1CollectorCSV()" style="background: var(--gold); color: var(--navy); display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">
+            <span>📊 Collector Summary</span>
           </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Same data in 3 sheets: All Data, Delivered Only, Failed Only."
+          <div style="font-size: 13px; color: #64748b; margin-top: 10px; font-style: italic; line-height: 1.4;">
+            "One row per collector showing unique/multi-attempt levels, assigned totals, and chronological Day 1 to Day 4 performance stats."
           </div>
         </div>
         
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel1CollectorCSV()">
-            <span>⬇ Collector Summary CSV</span>
+        <!-- Button 3: Executive Summary PDF -->
+        <div style="display: flex; flex-direction: column; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <button class="export-btn" onclick="exportLevel3ExecutivePDF()" style="background: var(--green); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">
+            <span>📋 Executive Summary PDF</span>
           </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "One row per collector showing totals, delivery rate and revenue collected."
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- LEVEL 2: ANALYTICAL REPORTS -->
-    <div class="card" style="margin-bottom: 20px;">
-      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-        <span>📈 Level 2 — Analytical Reports</span>
-      </h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 15px;">
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel2DeliveryExcel()">
-            <span>⬇ Delivery Rate Report Excel</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Delivery rates broken down by supervisor, collector, property type and day."
-          </div>
-        </div>
-        
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel2RevenueExcel()">
-            <span>⬇ Revenue Report Excel</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Amount collected vs billed. Includes payment mode breakdown (cash/momo/cheque)."
-          </div>
-        </div>
-        
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel2FailureExcel()">
-            <span>⬇ Failure Analysis Excel</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "All failed deliveries with reasons. Useful for identifying problem areas."
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- LEVEL 3: RESEARCH REPORTS -->
-    <div class="card" style="margin-bottom: 20px;">
-      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-        <span>📋 Level 3 — Research Reports</span>
-      </h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 15px;">
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel3ExecutivePDF()">
-            <span>⬇ Executive Summary PDF</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Ready-to-present report with key metrics, top performers and supervisor comparison."
-          </div>
-        </div>
-        
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel3CollectorScorecardPDF()">
-            <span>⬇ Collector Scorecard PDF</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Individual performance report for each of the 69 collectors."
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- LEVEL 4: STATISTICAL ANALYSIS -->
-    <div class="card" style="margin-bottom: 20px;">
-      <h3 style="margin-top:0; color:var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-        <span>🔬 Level 4 — Statistical Analysis</span>
-      </h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 15px;">
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel4SPSSCSV()">
-            <span>⬇ SPSS Ready CSV</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Coded numerical variables ready for SPSS or Stata statistical analysis. Includes variable codebook."
-          </div>
-        </div>
-        
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel4CrossTabExcel()">
-            <span>⬇ Cross Tabulation Excel</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Statistical cross-tabs: Delivered vs Rate Type, Supervisor, Day and Payment Mode."
+          <div style="font-size: 13px; color: #64748b; margin-top: 10px; font-style: italic; line-height: 1.4;">
+            "Ready-to-present formal report outlining key metrics, top performers, and supervisor comparisons in PDF format."
           </div>
         </div>
 
-        <div style="display: flex; flex-direction: column;">
-          <button class="export-btn" onclick="exportLevel4CrossTabPDF()">
-            <span>⬇ Cross Tabulation Report PDF</span>
-          </button>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 4px; font-style: italic; line-height: 1.4;">
-            "Ready-to-publish research report featuring statistical tables and visualization charts."
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -1965,6 +1874,84 @@
       }
     });
     return flatData;
+  }
+
+  // New Exporter: All Bills Report with Attempts Count
+  function exportAllBillsReport() {
+    if (!window.ALL_BILLS) {
+      alert("Bills database not loaded.");
+      return;
+    }
+    
+    var attemptMap = {};
+    var deliveryMap = {};
+    var amountMap = {};
+    var dateMap = {};
+    
+    allLogs.forEach(function(dayLog) {
+      if (dayLog.bills) {
+        dayLog.bills.forEach(function(b) {
+          var acc = b.accountNumber;
+          attemptMap[acc] = (attemptMap[acc] || 0) + 1;
+          if (b.delivered === 'yes') {
+            deliveryMap[acc] = 'Delivered';
+            amountMap[acc] = (amountMap[acc] || 0) + (parseFloat(b.amountPaid) || 0);
+          } else if (!deliveryMap[acc]) {
+            deliveryMap[acc] = 'Failed';
+          }
+          if (dayLog.date) {
+            dateMap[acc] = dayLog.date;
+          }
+        });
+      }
+    });
+    
+    var headers = [
+      "Account Number", "Ratepayer Name", "Collector", "Supervisor", "ARM", 
+      "Property Type", "Bill Amount GHS", "Attempts Count", "Delivery Status", 
+      "Total Paid GHS", "Last Attempt Date"
+    ];
+    
+    var csvRows = [headers.join(",")];
+    
+    window.ALL_BILLS.forEach(function(b) {
+      var acc = b.accountNumber;
+      var attempts = attemptMap[acc] || 0;
+      var status = deliveryMap[acc] || "Not Attempted";
+      var paid = amountMap[acc] || 0;
+      var lastDate = dateMap[acc] || "N/A";
+      
+      var row = [
+        acc,
+        b.ratepayerName || "",
+        b.collector || "",
+        b.supervisor || "",
+        b.arm || "",
+        b.useType || "",
+        b.billAmount || 0,
+        attempts,
+        status,
+        paid.toFixed(2),
+        lastDate
+      ];
+      
+      var escapedRow = row.map(function(val) {
+        var s = String(val).replace(/"/g, '""');
+        if (s.indexOf(',') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('"') >= 0) {
+          s = '"' + s + '"';
+        }
+        return s;
+      });
+      csvRows.push(escapedRow.join(","));
+    });
+    
+    var blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "all_bills_attempts_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   // Button 1: All Submissions CSV
