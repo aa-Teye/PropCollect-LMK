@@ -484,7 +484,7 @@
         
         <!-- Button 1: All Bills Report -->
         <div style="display: flex; flex-direction: column; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-          <button class="export-btn" onclick="exportAllBillsReport()" style="background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">
+          <button class="export-btn" onclick="exportAllBills()" style="background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 12px; border-radius: 6px; border: none; cursor: pointer;">
             <span>📄 All Bills Report</span>
           </button>
           <div style="font-size: 13px; color: #64748b; margin-top: 10px; font-style: italic; line-height: 1.4;">
@@ -1891,81 +1891,107 @@
   }
 
   // New Exporter: All Bills Report with Attempts Count
-  function exportAllBillsReport() {
-    if (!window.ALL_BILLS) {
-      alert("Bills database not loaded.");
+  function exportAllBills() {
+    if (!allLogs || allLogs.length === 0) {
+      alert('No data to export. Please refresh.');
       return;
     }
+
+    var billMap = {};
     
-    var attemptMap = {};
-    var deliveryMap = {};
-    var amountMap = {};
-    var dateMap = {};
-    
-    allLogs.forEach(function(dayLog) {
-      if (dayLog.bills) {
-        dayLog.bills.forEach(function(b) {
-          var acc = b.accountNumber;
-          attemptMap[acc] = (attemptMap[acc] || 0) + 1;
+    allLogs.forEach(function(l) {
+      if (l.bills && Array.isArray(l.bills)) {
+        l.bills.forEach(function(b) {
+          var key = (b.accountNumber || '') + '_' + (l.collector || '');
+          if (!billMap[key]) {
+            billMap[key] = {
+              accountNumber: b.accountNumber || '',
+              collector: l.collector || '',
+              unit: l.collectorUnit || l.unit || '',
+              supervisor: l.supervisor || '',
+              attempts: 0,
+              delivered: false,
+              amountPaid: 0,
+              modeOfPayment: '',
+              lastDate: '',
+              useType: b.useType || '',
+              failureReason: ''
+            };
+          }
+          billMap[key].attempts++;
           if (b.delivered === 'yes') {
-            deliveryMap[acc] = 'Delivered';
-            amountMap[acc] = (amountMap[acc] || 0) + (parseFloat(b.amountPaid) || 0);
-          } else if (!deliveryMap[acc]) {
-            deliveryMap[acc] = 'Failed';
+            billMap[key].delivered = true;
+            billMap[key].amountPaid = parseFloat(b.amountPaid) || 0;
+            billMap[key].modeOfPayment = b.modeOfPayment || '';
+          } else {
+            billMap[key].failureReason = b.failureReason || b.otherReason || '';
           }
-          if (dayLog.date) {
-            dateMap[acc] = dayLog.date;
-          }
+          billMap[key].lastDate = l.date;
         });
       }
     });
-    
+
     var headers = [
-      "Account Number", "Ratepayer Name", "Collector", "Supervisor", "ARM", 
-      "Property Type", "Bill Amount GHS", "Attempts Count", "Delivery Status", 
-      "Total Paid GHS", "Last Attempt Date"
+      'Account Number', 'Owner Name',
+      'Rate Type', 'Current Bill GHS',
+      'Balance GHS', 'Arrears GHS',
+      'Collector', 'ARM', 'Unit',
+      'Supervisor', 'Total Attempts',
+      'Final Status', 'Amount Paid GHS',
+      'Mode of Payment', 'Failure Reason',
+      'Date of Last Attempt'
     ];
-    
-    var csvRows = [headers.join(",")];
-    
-    window.ALL_BILLS.forEach(function(b) {
-      var acc = b.accountNumber;
-      var attempts = attemptMap[acc] || 0;
-      var status = deliveryMap[acc] || "Not Attempted";
-      var paid = amountMap[acc] || 0;
-      var lastDate = dateMap[acc] || "N/A";
-      
-      var row = [
-        acc,
-        b.ratepayerName || "",
-        b.collector || "",
-        b.supervisor || "",
-        b.arm || "",
-        b.useType || "",
-        b.billAmount || 0,
-        attempts,
-        status,
-        paid.toFixed(2),
-        lastDate
-      ];
-      
-      var escapedRow = row.map(function(val) {
-        var s = String(val).replace(/"/g, '""');
-        if (s.indexOf(',') >= 0 || s.indexOf('\n') >= 0 || s.indexOf('"') >= 0) {
-          s = '"' + s + '"';
+
+    var rows = Object.values(billMap).map(
+      function(bill) {
+        var details = null;
+        if (window.ALL_BILLS) {
+          details = window.ALL_BILLS.find(
+            function(b) {
+              return b.accountNumber === bill.accountNumber;
+            }) || null;
         }
-        return s;
+        return [
+          bill.accountNumber,
+          details ? (details.ownerName || '') : '',
+          details ? (details.rateType || '') : bill.useType,
+          details ? (details.currentBill || '') : '',
+          details ? (details.balance || '') : '',
+          details ? (details.arrears || '') : '',
+          bill.collector,
+          details ? (details.arm || '') : '',
+          bill.unit,
+          bill.supervisor,
+          bill.attempts,
+          bill.delivered ? 'Delivered' : 'Failed',
+          bill.amountPaid > 0 ?
+            bill.amountPaid.toFixed(2) : '0.00',
+          bill.modeOfPayment || '—',
+          bill.failureReason || '—',
+          bill.lastDate ? 
+            formatDisplayDate(bill.lastDate) : '—'
+        ];
+      }
+    );
+
+    try {
+      var ws = XLSX.utils.aoa_to_sheet([headers].concat(rows));
+      
+      var colWidths = headers.map(function(h) {
+        return { wch: Math.max(h.length, 15) };
       });
-      csvRows.push(escapedRow.join(","));
-    });
-    
-    var blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
-    var link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", "all_bills_attempts_report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      ws['!cols'] = colWidths;
+      
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'All Bills');
+      XLSX.writeFile(wb,
+        'PropCollect_AllBills_' +
+        new Date().toLocaleDateString('en-GB').replace(/\//g, '-') + '.xlsx');
+      alert('✅ Export successful!');
+    } catch(err) {
+      console.error('Export error:', err);
+      alert('Export failed: ' + err.message);
+    }
   }
 
   // Button 1: All Submissions CSV
