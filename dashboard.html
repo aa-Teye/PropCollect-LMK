@@ -458,6 +458,7 @@
     </div>
     
     <div class="card" style="overflow-x:auto;">
+      <!-- FIX 2: Filtered export buttons -->
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <button onclick="exportFilteredBills('excel')"
           style="padding:10px 20px;background:#006B3F;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">
@@ -2391,6 +2392,7 @@
       var supName = c.supervisor;
       
       var stats = getFullCollectorStats(c.name);
+      // FIX 1: Fetch ARM from ALL_BILLS or allLogs fallback
       var arm = '';
       if (window.ALL_BILLS) {
         var billRef = window.ALL_BILLS.find(
