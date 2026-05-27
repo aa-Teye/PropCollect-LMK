@@ -1499,19 +1499,25 @@
       currentReviewIdx = -1;
     }
 
+    function getDayOfWeek(dateStr) {
+      if (!dateStr) return '';
+      var d = new Date(dateStr);
+      return d.toLocaleDateString('en-GB', {
+        weekday: 'long'
+      });
+    }
+
     function submitSingleBill(idx) {
       const b = formBills[idx];
+      var state = window.state;
 
       var previousAttempts = allLogs ? 
         allLogs.filter(function(l) {
           return l.accountNumber === b.accountNumber &&
-            l.collector === currentCollector.name;
+            l.collector === state.collector;
         }).length : 0;
 
       var attemptNumber = previousAttempts + 1;
-
-      var dayOfWeek = new Date(document.getElementById('dateInput').value).toLocaleDateString('en-US', { weekday: 'long' });
-      var submissionTime = new Date().toISOString();
 
       var rName = '';
       var rPhone = '';
@@ -1537,13 +1543,13 @@
 
       const payload = {
         action: 'submitDailyLog',
-        supervisor: currentSupervisor,
-        collector: currentCollector.name,
-        collectorUnit: currentCollector.unit,
-        collectorPhone: currentCollector.phone || '',
-        date: document.getElementById('dateInput').value,
-        dayOfWeek: dayOfWeek,
-        submissionTime: submissionTime,
+        supervisor: state.supervisor,
+        collector: state.collector,
+        collectorUnit: state.collectorUnit,
+        collectorPhone: state.collectorPhone || '',
+        date: state.date,
+        dayOfWeek: getDayOfWeek(state.date),
+        submissionTime: new Date().toISOString(),
         bills: [{
           accountNumber: b.accountNumber,
           useType: b.rateType,
@@ -1574,11 +1580,11 @@
 
         // Push new log to local database for instant update in current session
         allLogs.push({
-          date: document.getElementById('dateInput').value,
-          supervisor: currentSupervisor,
-          collector: currentCollector.name,
-          unit: currentCollector.unit,
-          phone: currentCollector.phone || '',
+          date: state.date,
+          supervisor: state.supervisor,
+          collector: state.collector,
+          unit: state.collectorUnit,
+          phone: state.collectorPhone || '',
           accountNumber: b.accountNumber,
           useType: b.rateType,
           billAmount: b.currentBill,
@@ -1592,7 +1598,8 @@
           attemptNumber: attemptNumber
         });
 
-        var dateStr = new Date().toLocaleDateString('en-GB');
+        var dateParts = state.date.split('-');
+        var dateStr = dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0];
         var submittedBills = JSON.parse(sessionStorage.getItem('submittedBills') || '{}');
         submittedBills[b.accountNumber] = {
           delivered: b.delivered,
