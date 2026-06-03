@@ -648,6 +648,18 @@
       </div>
 
       <button class="btn" onclick="goToStep2()">Next</button>
+      <button onclick="showBillTracker()"
+        style="width:100%;padding:18px;
+        border-radius:16px;background:white;
+        color:#006B3F;
+        border:2px solid #006B3F;
+        font-size:16px;font-weight:700;
+        cursor:pointer;display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:10px;margin-top:8px;">
+        📊 Bill Tracker
+      </button>
     </div>
 
     <!-- STEP 2: BILL DETAILS -->
@@ -696,6 +708,89 @@
       </div>
 
       <div id="bills-container" style="padding-bottom: 40px;"></div>
+    </div>
+
+    <!-- Bill Tracker Section -->
+    <div class="screen section card" id="secBillTracker" style="display:none; background:white; color:#0a1628; border-radius:12px; padding:20px; box-sizing:border-box; margin-bottom:20px;">
+      <div style="display:flex;
+        align-items:center;gap:12px;
+        margin-bottom:20px;">
+        <button onclick="goBack()"
+          style="background:none;border:none;
+          color:#64748b;cursor:pointer;
+          font-size:20px;">←</button>
+        <h2 style="font-weight:900;
+          font-size:18px;color:#0a1628;
+          margin:0;">📊 Bill Tracker</h2>
+      </div>
+      
+      <!-- Stats -->
+      <div style="display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px;margin-bottom:16px;">
+        <div style="background:#dcfce7;
+          border-radius:12px;padding:16px;
+          text-align:center;">
+          <div style="font-size:28px;
+            font-weight:900;color:#15803d;"
+            id="trackerDelivered">0</div>
+          <div style="font-size:12px;
+            color:#166534;font-weight:700;">
+            ✅ Delivered</div>
+        </div>
+        <div style="background:#f0f9ff;
+          border-radius:12px;padding:16px;
+          text-align:center;">
+          <div style="font-size:28px;
+            font-weight:900;color:#0369a1;"
+            id="trackerPending">0</div>
+          <div style="font-size:12px;
+            color:#0369a1;font-weight:700;">
+            🔵 Pending</div>
+        </div>
+      </div>
+      
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:8px;
+        margin-bottom:16px;">
+        <button onclick="filterTracker('delivered')"
+          id="trackerFilterDelivered"
+          style="flex:1;padding:10px;
+          background:#006B3F;color:white;
+          border:none;border-radius:8px;
+          font-weight:700;cursor:pointer;
+          font-size:13px;">
+          ✅ Delivered
+        </button>
+        <button onclick="filterTracker('pending')"
+          id="trackerFilterPending"
+          style="flex:1;padding:10px;
+          background:#e2e8f0;color:#0a1628;
+          border:none;border-radius:8px;
+          font-weight:700;cursor:pointer;
+          font-size:13px;">
+          🔵 Pending
+        </button>
+      </div>
+      
+      <!-- Search in tracker -->
+      <input type="text" 
+        id="trackerSearch"
+        placeholder="Search by name or account..."
+        oninput="renderTrackerList()"
+        style="width:100%;padding:10px;
+        border:2px solid #e2e8f0;
+        border-radius:8px;font-size:14px;
+        margin-bottom:12px;
+        box-sizing:border-box;
+        color:black;
+        background:white;">
+      
+      <!-- List -->
+      <div id="trackerList"
+        style="display:flex;
+        flex-direction:column;gap:8px;">
+      </div>
     </div>
 
     <div id="loading">Submitting... Please wait.</div>
@@ -1719,6 +1814,29 @@
         };
         sessionStorage.setItem('submittedBills', JSON.stringify(submittedBills));
 
+        // Sync with localStorage submitted_bills
+        var submissions = JSON.parse(localStorage.getItem('submitted_bills') || '[]');
+        var existingSubIdx = submissions.findIndex(function(s) {
+          return s.accountNo === b.accountNumber || s.account === b.accountNumber || s.billNo === b.accountNumber;
+        });
+        var newSub = {
+          accountNo: b.accountNumber,
+          account: b.accountNumber,
+          billNo: b.accountNumber,
+          name: rName || b.ownerName || '—',
+          ownerName: b.ownerName || '—',
+          collector: state.collector,
+          arm: b.arm || '',
+          date: dateStr,
+          status: b.delivered
+        };
+        if (existingSubIdx > -1) {
+          submissions[existingSubIdx] = newSub;
+        } else {
+          submissions.push(newSub);
+        }
+        localStorage.setItem('submitted_bills', JSON.stringify(submissions));
+
         // Visually update the card immediately based on the new submission
         const card = document.getElementById(`bill-card-${idx}`);
         const formContent = document.getElementById(`form-content-${idx}`);
@@ -1840,6 +1958,7 @@
 
       if (found.length > 0) {
         var bill = found[0];
+        bill.accountNo = bill.accountNumber;
         var isCurrentCollector = bill.collector === state.collector;
 
         var bannerHtml = isCurrentCollector ?
@@ -1876,6 +1995,40 @@
             handleSearchClick(bill);
           };
           
+          var status = getBillStatus(bill.accountNo);
+          var statusHtml = status ?
+            '<div style="background:#dcfce7;' +
+            'border-radius:10px;padding:12px;' +
+            'margin:12px 0;">' +
+            '<div style="color:#15803d;' +
+            'font-weight:800;font-size:15px;' +
+            'margin-bottom:4px;">✅ DELIVERED</div>' +
+            '<div style="font-size:12px;' +
+            'color:#166534;">By: ' + 
+            (status.collector || status.arm || '') + 
+            '</div>' +
+            '<div style="font-size:12px;' +
+            'color:#166534;">Date: ' + 
+            (status.date || '') + '</div>' +
+            '<button onclick="event.stopPropagation(); editSubmission(\'' +
+            bill.accountNo + '\')" ' +
+            'style="margin-top:8px;width:100%;' +
+            'padding:8px;background:white;' +
+            'color:#15803d;border:2px solid #15803d;' +
+            'border-radius:8px;font-weight:700;' +
+            'cursor:pointer;font-size:13px;">'+
+            '✏️ Edit Submission</button>' +
+            '</div>' :
+            '<div style="background:#f0f9ff;' +
+            'border-radius:10px;padding:12px;' +
+            'margin:12px 0;">' +
+            '<div style="color:#0369a1;' +
+            'font-weight:800;font-size:15px;">'+
+            '🔵 PENDING</div>' +
+            '<div style="font-size:12px;' +
+            'color:#0369a1;">Not yet submitted' +
+            '</div></div>';
+
           cardEl.innerHTML = 
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
               '<span style="font-weight:700;font-size:16px;color:#0a1628;">' + bill.accountNumber + '</span>' +
@@ -1883,6 +2036,7 @@
               (isCurrentCollector ? 'Click to Open' : 'Click to Add') + '</span>' +
             '</div>' +
             '<div style="color:#64748b;font-size:13px;margin:4px 0;">' + (bill.ownerName || "No owner name") + '</div>' +
+            statusHtml +
             '<div style="margin-top:8px;font-size:13px;">Rate Type: <strong>' + bill.rateType + '</strong></div>' +
             '<div style="font-size:13px;">Current Bill: <strong>GHS ' + parseFloat(bill.currentBill || 0).toFixed(2) + '</strong></div>' +
             '<div style="font-size:13px;">Balance: <strong>GHS ' + parseFloat(bill.balance || 0).toFixed(2) + '</strong></div>' +
@@ -1890,7 +2044,7 @@
             '<div style="font-size:13px;">Unit: <strong>' + bill.unit + '</strong></div>' +
             '<div style="font-size:13px;">Collector: <strong>' + bill.collector + '</strong></div>' +
             '<div style="font-size:13px;">Supervisor: <strong>' + bill.supervisor + '</strong></div>';
-            
+             
           resultDiv.appendChild(cardEl);
         }
 
@@ -1923,7 +2077,328 @@
       }
     }
 
+    // ========================================
+    // BILL STATUS TRACKING & BILL TRACKER FUNCTIONS
+    // ========================================
+    window.BILLS_DATA = window.ALL_BILLS;
+
+    function getBillStatus(accountNo) {
+      var submissions = JSON.parse(
+        localStorage.getItem(
+          'submitted_bills') || '[]');
+      var submitted = submissions.find(
+        function(s) {
+          return s.accountNo === accountNo ||
+            s.account === accountNo ||
+            s.billNo === accountNo;
+        });
+      return submitted || null;
+    }
+
+    function showSection(sectionId) {
+      showScreen(sectionId);
+    }
+
+    function goBack() {
+      showScreen('screen-step1');
+    }
+
+    function editSubmission(accountNo) {
+      if (!window.ALL_BILLS) return;
+      var bill = window.ALL_BILLS.find(function(b) {
+        return b.accountNumber === accountNo || b.accountNo === accountNo;
+      });
+      if (!bill) {
+        alert("Bill not found.");
+        return;
+      }
+      var isCurrentCollector = currentCollector && bill.collector === currentCollector.name;
+      if (!isCurrentCollector) {
+        var msg = "This bill belongs to Unit " + bill.unit + " (" + bill.collector + ").\n\nTo edit this submission, we need to load this collector. Proceed?";
+        if (confirm(msg)) {
+          var select = document.getElementById('collectorSelect');
+          if (select) {
+            var optValue = "";
+            for (var i = 0; i < select.options.length; i++) {
+              var opt = select.options[i];
+              if (opt.value) {
+                var c = JSON.parse(opt.value);
+                if (c.name === bill.collector) {
+                  optValue = opt.value;
+                  select.selectedIndex = i;
+                  break;
+                }
+              }
+            }
+            if (optValue) {
+              updateBillCount();
+              goToStep2();
+              setTimeout(function() {
+                var idx = formBills.findIndex(function(b) {
+                  return b.accountNumber === bill.accountNumber;
+                });
+                if (idx === -1) {
+                  addBillToForm(bill);
+                  setTimeout(function() {
+                    var newIdx = formBills.findIndex(function(b) {
+                      return b.accountNumber === bill.accountNumber;
+                    });
+                    if (newIdx !== -1) {
+                      reviewAndEditBill(newIdx);
+                    }
+                  }, 200);
+                } else {
+                  reviewAndEditBill(idx);
+                }
+              }, 500);
+            } else {
+              alert("You are not authorized to edit bills for " + bill.collector + " (Unit " + bill.unit + ").");
+            }
+          }
+        }
+      } else {
+        var idx = formBills.findIndex(function(b) {
+          return b.accountNumber === bill.accountNumber;
+        });
+        if (idx !== -1) {
+          reviewAndEditBill(idx);
+        } else {
+          addBillToForm(bill);
+          setTimeout(function() {
+            var newIdx = formBills.findIndex(function(b) {
+              return b.accountNumber === bill.accountNumber;
+            });
+            if (newIdx !== -1) {
+              reviewAndEditBill(newIdx);
+            }
+          }, 200);
+        }
+      }
+    }
+
+    var currentTrackerFilter = 'delivered';
+
+    function showBillTracker() {
+      loadTrackerData();
+      showSection('secBillTracker');
+    }
+
+    function loadTrackerData() {
+      window.BILLS_DATA = window.ALL_BILLS;
+      var submissions = JSON.parse(
+        localStorage.getItem(
+          'submitted_bills') || '[]');
+      
+      var deliveredEl = document.getElementById(
+        'trackerDelivered');
+      var pendingEl = document.getElementById(
+        'trackerPending');
+      
+      if (deliveredEl) 
+        deliveredEl.textContent = 
+          submissions.length;
+      
+      var totalBills = window.BILLS_DATA ? 
+        window.BILLS_DATA.length : 0;
+      if (pendingEl) 
+        pendingEl.textContent = 
+          totalBills - submissions.length;
+      
+      renderTrackerList();
+    }
+
+    function filterTracker(filter) {
+      currentTrackerFilter = filter;
+      
+      var deliveredBtn = document.getElementById(
+        'trackerFilterDelivered');
+      var pendingBtn = document.getElementById(
+        'trackerFilterPending');
+      
+      if (deliveredBtn) {
+        deliveredBtn.style.background = 
+          filter === 'delivered' ? 
+          '#006B3F' : '#e2e8f0';
+        deliveredBtn.style.color = 
+          filter === 'delivered' ? 
+          'white' : '#0a1628';
+      }
+      if (pendingBtn) {
+        pendingBtn.style.background = 
+          filter === 'pending' ? 
+          '#006B3F' : '#e2e8f0';
+        pendingBtn.style.color = 
+          filter === 'pending' ? 
+          'white' : '#0a1628';
+      }
+      
+      renderTrackerList();
+    }
+
+    function renderTrackerList() {
+      window.BILLS_DATA = window.ALL_BILLS;
+      var list = document.getElementById(
+        'trackerList');
+      if (!list) return;
+      
+      var search = (document.getElementById(
+        'trackerSearch') ? 
+        document.getElementById(
+          'trackerSearch').value : '')
+        .toLowerCase().trim();
+      
+      var submissions = JSON.parse(
+        localStorage.getItem(
+          'submitted_bills') || '[]');
+      
+      if (currentTrackerFilter === 'delivered') {
+        var filtered = submissions.filter(
+          function(s) {
+            if (!search) return true;
+            return (s.accountNo || '')
+              .toLowerCase().includes(search) ||
+              (s.name || s.ownerName || '')
+              .toLowerCase().includes(search);
+          });
+        
+        if (filtered.length === 0) {
+          list.innerHTML = 
+            '<div style="text-align:center;' +
+            'padding:40px;color:#64748b;">' +
+            '<div style="font-size:40px;">📋</div>'+
+            '<p>No delivered bills yet.</p>' +
+            '</div>';
+          return;
+        }
+        
+        list.innerHTML = filtered.map(
+          function(s) {
+            return '<div style="background:white;'+
+              'border-radius:12px;padding:14px;' +
+              'border-left:4px solid #22c55e;' +
+              'box-shadow:0 1px 4px ' +
+              'rgba(0,0,0,0.06);color:black;">' +
+              '<div style="font-weight:800;' +
+              'color:#0a1628;font-size:14px;">' +
+              (s.accountNo || s.account || '') + 
+              '</div>' +
+              '<div style="font-size:13px;' +
+              'color:#64748b;margin-top:2px;">' +
+              (s.name || s.ownerName || '—') + 
+              '</div>' +
+              '<div style="font-size:12px;' +
+              'color:#64748b;margin-top:2px;">' +
+              '👤 ' + (s.collector || s.arm || '')+ 
+              ' · 📅 ' + (s.date || '') + 
+              '</div>' +
+              '<span style="background:#dcfce7;' +
+              'color:#15803d;padding:2px 8px;' +
+              'border-radius:20px;font-size:11px;'+
+              'font-weight:700;margin-top:6px;' +
+              'display:inline-block;">' +
+              '✅ Delivered</span>' +
+              '</div>';
+          }).join('');
+          
+      } else {
+        // Pending bills
+        if (!window.BILLS_DATA) {
+          list.innerHTML = 
+            '<div style="text-align:center;' +
+            'padding:40px;color:#64748b;">' +
+            'Loading bills data...</div>';
+          return;
+        }
+        
+        var submittedNos = submissions.map(
+          function(s) { 
+            return s.accountNo || s.account; 
+          });
+        
+        var pendingBills = window.BILLS_DATA
+          .filter(function(b) {
+            var accNo = b.accountNumber || b.accountNo || 
+              b['Account No'] || b.account || '';
+            if (submittedNos.indexOf(accNo) > -1) 
+              return false;
+            if (!search) return true;
+            return accNo.toLowerCase()
+              .includes(search) ||
+              (b.name || b.ownerName || b['Owner Name'] || '')
+              .toLowerCase().includes(search);
+          }).slice(0, 50); // show first 50
+        
+        if (pendingBills.length === 0) {
+          list.innerHTML = 
+            '<div style="text-align:center;' +
+            'padding:40px;color:#64748b;">' +
+            '<div style="font-size:40px;">🎉</div>'+
+            '<p>All bills delivered!</p>' +
+            '</div>';
+          return;
+        }
+        
+        list.innerHTML = pendingBills.map(
+          function(b) {
+            var accNo = b.accountNumber || b.accountNo || 
+              b['Account No'] || b.account || '';
+            var name = b.name || b.ownerName || 
+              b['Owner Name'] || '—';
+            return '<div style="background:white;'+
+              'border-radius:12px;padding:14px;' +
+              'border-left:4px solid #3b82f6;' +
+              'box-shadow:0 1px 4px ' +
+              'rgba(0,0,0,0.06);color:black;">' +
+              '<div style="font-weight:800;' +
+              'color:#0a1628;font-size:14px;">' +
+              accNo + '</div>' +
+              '<div style="font-size:13px;' +
+              'color:#64748b;margin-top:2px;">' +
+              name + '</div>' +
+              '<span style="background:#f0f9ff;' +
+              'color:#0369a1;padding:2px 8px;' +
+              'border-radius:20px;font-size:11px;'+
+              'font-weight:700;margin-top:6px;' +
+              'display:inline-block;">' +
+              '🔵 Pending</span>' +
+              '</div>';
+          }).join('');
+      }
+    }
+
+    function syncSubmissions() {
+      var sessionStorageBills = JSON.parse(sessionStorage.getItem('submittedBills') || '{}');
+      var localStorageBills = JSON.parse(localStorage.getItem('submitted_bills') || '[]');
+      var updated = false;
+
+      for (var accNo in sessionStorageBills) {
+        var s = sessionStorageBills[accNo];
+        var exists = localStorageBills.some(function(l) {
+          return l.accountNo === accNo || l.account === accNo || l.billNo === accNo;
+        });
+        if (!exists) {
+          var billInfo = window.ALL_BILLS ? window.ALL_BILLS.find(function(b) { return b.accountNumber === accNo; }) : null;
+          localStorageBills.push({
+            accountNo: accNo,
+            account: accNo,
+            billNo: accNo,
+            name: s.ratepayerName || (billInfo ? billInfo.ownerName : '') || '—',
+            ownerName: (billInfo ? billInfo.ownerName : '') || '—',
+            collector: (billInfo ? billInfo.collector : '') || '',
+            arm: (billInfo ? billInfo.arm : '') || '',
+            date: s.date || '',
+            status: s.delivered
+          });
+          updated = true;
+        }
+      }
+      if (updated) {
+        localStorage.setItem('submitted_bills', JSON.stringify(localStorageBills));
+      }
+    }
+
     function checkSessionOnLoad() {
+      syncSubmissions();
       const sessionStr = sessionStorage.getItem('propcollect_session');
       if (sessionStr) {
         try {
