@@ -2236,7 +2236,20 @@
     var currentTrackerFilter = 'delivered';
 
     function showBillTracker() {
-      showScreen('secBillTracker');
+      var allScreens = document.querySelectorAll(
+        '.screen');
+      allScreens.forEach(function(s) {
+        s.style.display = 'none';
+        s.classList.remove('active');
+      });
+      
+      var tracker = document.getElementById(
+        'secBillTracker');
+      if (tracker) {
+        tracker.style.display = 'block';
+        tracker.classList.add('active');
+      }
+      
       refreshBillTracker();
     }
 
