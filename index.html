@@ -717,7 +717,7 @@
         <div style="display:flex;
           align-items:center;gap:12px;
           margin-bottom:20px;">
-          <button onclick="showScreen('screen-step2')"
+          <button onclick="closeBillTracker()"
             style="background:none;border:none;
             color:#64748b;cursor:pointer;
             font-size:24px;">←</button>
@@ -2236,21 +2236,23 @@
     var currentTrackerFilter = 'delivered';
 
     function showBillTracker() {
-      var allScreens = document.querySelectorAll(
-        '.screen');
-      allScreens.forEach(function(s) {
-        s.style.display = 'none';
-        s.classList.remove('active');
-      });
+      document.getElementById(
+        'screen-step1').style.display = 'none';
       
       var tracker = document.getElementById(
         'secBillTracker');
       if (tracker) {
         tracker.style.display = 'block';
-        tracker.classList.add('active');
       }
       
       refreshBillTracker();
+    }
+
+    function closeBillTracker() {
+      document.getElementById(
+        'secBillTracker').style.display = 'none';
+      document.getElementById(
+        'screen-step1').style.display = 'block';
     }
 
     function refreshBillTracker() {
