@@ -705,91 +705,117 @@
         <div style="font-size:40px;">⏳</div>
         <p style="color:#64748b;margin-top:12px; font-weight:600;">Loading bills...</p>
         <p style="color:#94a3b8;font-size:12px;">Fetching all assigned bills</p>
-      </div>
-
-      <div id="bills-container" style="padding-bottom: 40px;"></div>
+       <div id="bills-container" style="padding-bottom: 40px;"></div>
     </div>
 
     <!-- Bill Tracker Section -->
-    <div class="screen section card" id="secBillTracker" style="display:none; background:white; color:#0a1628; border-radius:12px; padding:20px; box-sizing:border-box; margin-bottom:20px;">
-      <div style="display:flex;
-        align-items:center;gap:12px;
-        margin-bottom:20px;">
-        <button onclick="goBack()"
-          style="background:none;border:none;
-          color:#64748b;cursor:pointer;
-          font-size:20px;">←</button>
-        <h2 style="font-weight:900;
-          font-size:18px;color:#0a1628;
-          margin:0;">📊 Bill Tracker</h2>
-      </div>
-      
-      <!-- Stats -->
-      <div style="display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:12px;margin-bottom:16px;">
-        <div style="background:#dcfce7;
-          border-radius:12px;padding:16px;
-          text-align:center;">
-          <div style="font-size:28px;
-            font-weight:900;color:#15803d;"
-            id="trackerDelivered">0</div>
-          <div style="font-size:12px;
-            color:#166534;font-weight:700;">
-            ✅ Delivered</div>
+    <div class="screen" id="secBillTracker"
+      style="display:none;">
+      <div style="padding:16px;">
+        
+        <!-- Header -->
+        <div style="display:flex;
+          align-items:center;gap:12px;
+          margin-bottom:20px;">
+          <button onclick="showScreen('screen-step2')"
+            style="background:none;border:none;
+            color:#64748b;cursor:pointer;
+            font-size:24px;">←</button>
+          <div>
+            <h2 style="font-weight:900;
+              font-size:18px;color:#0a1628;
+              margin:0;">📊 Bill Tracker</h2>
+            <div style="font-size:12px;
+              color:#64748b;">
+              Per collector breakdown
+            </div>
+          </div>
+          <button onclick="refreshBillTracker()"
+            style="margin-left:auto;
+            padding:8px 14px;
+            background:#006B3F;color:white;
+            border:none;border-radius:8px;
+            font-weight:700;cursor:pointer;
+            font-size:12px;">
+            🔄 Refresh
+          </button>
         </div>
-        <div style="background:#f0f9ff;
-          border-radius:12px;padding:16px;
-          text-align:center;">
-          <div style="font-size:28px;
-            font-weight:900;color:#0369a1;"
-            id="trackerPending">0</div>
-          <div style="font-size:12px;
-            color:#0369a1;font-weight:700;">
-            🔵 Pending</div>
+
+        <!-- Overall Stats -->
+        <div style="display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:12px;margin-bottom:20px;">
+          <div style="background:#dcfce7;
+            border-radius:12px;padding:16px;
+            text-align:center;">
+            <div style="font-size:28px;
+              font-weight:900;color:#15803d;"
+              id="trackerTotalDelivered">0</div>
+            <div style="font-size:12px;
+              color:#166534;font-weight:700;
+              margin-top:4px;">
+              ✅ Total Delivered
+            </div>
+          </div>
+          <div style="background:#eff6ff;
+            border-radius:12px;padding:16px;
+            text-align:center;">
+            <div style="font-size:28px;
+              font-weight:900;color:#1d4ed8;"
+              id="trackerTotalPending">0</div>
+            <div style="font-size:12px;
+              color:#1e40af;font-weight:700;
+              margin-top:4px;">
+              🔵 Total Pending
+            </div>
+          </div>
+        </div>
+
+        <!-- Collector Cards -->
+        <div id="collectorTrackerList"
+          style="display:flex;
+          flex-direction:column;gap:12px;">
+          <div style="text-align:center;
+            padding:40px;color:#64748b;">
+            ⏳ Loading...
+          </div>
         </div>
       </div>
-      
-      <!-- Filter tabs -->
-      <div style="display:flex;gap:8px;
-        margin-bottom:16px;">
-        <button onclick="filterTracker('delivered')"
-          id="trackerFilterDelivered"
-          style="flex:1;padding:10px;
-          background:#006B3F;color:white;
-          border:none;border-radius:8px;
-          font-weight:700;cursor:pointer;
-          font-size:13px;">
-          ✅ Delivered
-        </button>
-        <button onclick="filterTracker('pending')"
-          id="trackerFilterPending"
-          style="flex:1;padding:10px;
-          background:#e2e8f0;color:#0a1628;
-          border:none;border-radius:8px;
-          font-weight:700;cursor:pointer;
-          font-size:13px;">
-          🔵 Pending
-        </button>
-      </div>
-      
-      <!-- Search in tracker -->
-      <input type="text" 
-        id="trackerSearch"
-        placeholder="Search by name or account..."
-        oninput="renderTrackerList()"
-        style="width:100%;padding:10px;
-        border:2px solid #e2e8f0;
-        border-radius:8px;font-size:14px;
-        margin-bottom:12px;
-        box-sizing:border-box;
-        color:black;
-        background:white;">
-      
-      <!-- List -->
-      <div id="trackerList"
-        style="display:flex;
-        flex-direction:column;gap:8px;">
+    </div>
+
+    <!-- Collector Bills Modal -->
+    <div id="collectorBillsModal"
+      style="display:none;position:fixed;
+      top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.5);
+      z-index:9999;overflow-y:auto;">
+      <div style="background:white;
+        min-height:100%;padding:16px;">
+        
+        <div style="display:flex;
+          align-items:center;gap:12px;
+          margin-bottom:20px;
+          position:sticky;top:0;
+          background:white;padding:12px 0;">
+          <button onclick="closeCollectorModal()"
+            style="background:none;border:none;
+            color:#64748b;cursor:pointer;
+            font-size:24px;">←</button>
+          <div>
+            <h3 id="modalCollectorName"
+              style="font-weight:900;
+              font-size:16px;color:#0a1628;
+              margin:0;"></h3>
+            <div id="modalCollectorSubtitle"
+              style="font-size:12px;
+              color:#64748b;"></div>
+          </div>
+        </div>
+        
+        <div id="collectorBillsList"
+          style="display:flex;
+          flex-direction:column;gap:8px;">
+        </div>
       </div>
     </div>
 
@@ -2210,191 +2236,323 @@
     var currentTrackerFilter = 'delivered';
 
     function showBillTracker() {
-      loadTrackerData();
-      showSection('secBillTracker');
+      showScreen('secBillTracker');
+      refreshBillTracker();
     }
 
-    function loadTrackerData() {
-      window.BILLS_DATA = window.ALL_BILLS;
-      var submissions = JSON.parse(
-        localStorage.getItem(
-          'submitted_bills') || '[]');
-      
-      var deliveredEl = document.getElementById(
-        'trackerDelivered');
-      var pendingEl = document.getElementById(
-        'trackerPending');
-      
-      if (deliveredEl) 
-        deliveredEl.textContent = 
-          submissions.length;
-      
-      var totalBills = window.BILLS_DATA ? 
-        window.BILLS_DATA.length : 0;
-      if (pendingEl) 
-        pendingEl.textContent = 
-          totalBills - submissions.length;
-      
-      renderTrackerList();
-    }
-
-    function filterTracker(filter) {
-      currentTrackerFilter = filter;
-      
-      var deliveredBtn = document.getElementById(
-        'trackerFilterDelivered');
-      var pendingBtn = document.getElementById(
-        'trackerFilterPending');
-      
-      if (deliveredBtn) {
-        deliveredBtn.style.background = 
-          filter === 'delivered' ? 
-          '#006B3F' : '#e2e8f0';
-        deliveredBtn.style.color = 
-          filter === 'delivered' ? 
-          'white' : '#0a1628';
-      }
-      if (pendingBtn) {
-        pendingBtn.style.background = 
-          filter === 'pending' ? 
-          '#006B3F' : '#e2e8f0';
-        pendingBtn.style.color = 
-          filter === 'pending' ? 
-          'white' : '#0a1628';
-      }
-      
-      renderTrackerList();
-    }
-
-    function renderTrackerList() {
-      window.BILLS_DATA = window.ALL_BILLS;
+    function refreshBillTracker() {
       var list = document.getElementById(
-        'trackerList');
-      if (!list) return;
-      
-      var search = (document.getElementById(
-        'trackerSearch') ? 
-        document.getElementById(
-          'trackerSearch').value : '')
-        .toLowerCase().trim();
+        'collectorTrackerList');
+      if (list) list.innerHTML = 
+        '<div style="text-align:center;' +
+        'padding:40px;color:#64748b;">' +
+        '⏳ Loading...</div>';
       
       var submissions = JSON.parse(
         localStorage.getItem(
           'submitted_bills') || '[]');
       
-      if (currentTrackerFilter === 'delivered') {
-        var filtered = submissions.filter(
-          function(s) {
-            if (!search) return true;
-            return (s.accountNo || '')
-              .toLowerCase().includes(search) ||
-              (s.name || s.ownerName || '')
-              .toLowerCase().includes(search);
-          });
-        
-        if (filtered.length === 0) {
-          list.innerHTML = 
-            '<div style="text-align:center;' +
-            'padding:40px;color:#64748b;">' +
-            '<div style="font-size:40px;">📋</div>'+
-            '<p>No delivered bills yet.</p>' +
-            '</div>';
-          return;
-        }
-        
-        list.innerHTML = filtered.map(
-          function(s) {
-            return '<div style="background:white;'+
-              'border-radius:12px;padding:14px;' +
-              'border-left:4px solid #22c55e;' +
-              'box-shadow:0 1px 4px ' +
-              'rgba(0,0,0,0.06);color:black;">' +
-              '<div style="font-weight:800;' +
-              'color:#0a1628;font-size:14px;">' +
-              (s.accountNo || s.account || '') + 
-              '</div>' +
-              '<div style="font-size:13px;' +
-              'color:#64748b;margin-top:2px;">' +
-              (s.name || s.ownerName || '—') + 
-              '</div>' +
-              '<div style="font-size:12px;' +
-              'color:#64748b;margin-top:2px;">' +
-              '👤 ' + (s.collector || s.arm || '')+ 
-              ' · 📅 ' + (s.date || '') + 
-              '</div>' +
-              '<span style="background:#dcfce7;' +
-              'color:#15803d;padding:2px 8px;' +
-              'border-radius:20px;font-size:11px;'+
-              'font-weight:700;margin-top:6px;' +
-              'display:inline-block;">' +
-              '✅ Delivered</span>' +
-              '</div>';
-          }).join('');
-          
-      } else {
-        // Pending bills
-        if (!window.BILLS_DATA) {
-          list.innerHTML = 
-            '<div style="text-align:center;' +
-            'padding:40px;color:#64748b;">' +
-            'Loading bills data...</div>';
-          return;
-        }
-        
-        var submittedNos = submissions.map(
-          function(s) { 
-            return s.accountNo || s.account; 
-          });
-        
-        var pendingBills = window.BILLS_DATA
-          .filter(function(b) {
-            var accNo = b.accountNumber || b.accountNo || 
-              b['Account No'] || b.account || '';
-            if (submittedNos.indexOf(accNo) > -1) 
-              return false;
-            if (!search) return true;
-            return accNo.toLowerCase()
-              .includes(search) ||
-              (b.name || b.ownerName || b['Owner Name'] || '')
-              .toLowerCase().includes(search);
-          }).slice(0, 50); // show first 50
-        
-        if (pendingBills.length === 0) {
-          list.innerHTML = 
-            '<div style="text-align:center;' +
-            'padding:40px;color:#64748b;">' +
-            '<div style="font-size:40px;">🎉</div>'+
-            '<p>All bills delivered!</p>' +
-            '</div>';
-          return;
-        }
-        
-        list.innerHTML = pendingBills.map(
-          function(b) {
-            var accNo = b.accountNumber || b.accountNo || 
-              b['Account No'] || b.account || '';
-            var name = b.name || b.ownerName || 
-              b['Owner Name'] || '—';
-            return '<div style="background:white;'+
-              'border-radius:12px;padding:14px;' +
-              'border-left:4px solid #3b82f6;' +
-              'box-shadow:0 1px 4px ' +
-              'rgba(0,0,0,0.06);color:black;">' +
-              '<div style="font-weight:800;' +
-              'color:#0a1628;font-size:14px;">' +
-              accNo + '</div>' +
-              '<div style="font-size:13px;' +
-              'color:#64748b;margin-top:2px;">' +
-              name + '</div>' +
-              '<span style="background:#f0f9ff;' +
-              'color:#0369a1;padding:2px 8px;' +
-              'border-radius:20px;font-size:11px;'+
-              'font-weight:700;margin-top:6px;' +
-              'display:inline-block;">' +
-              '🔵 Pending</span>' +
-              '</div>';
-          }).join('');
+      var allBills = window.ALL_BILLS || 
+        window.BILLS_DATA || [];
+      
+      if (allBills.length === 0) {
+        if (list) list.innerHTML = 
+          '<div style="text-align:center;' +
+          'padding:40px;color:#64748b;">' +
+          'No bills data loaded.</div>';
+        return;
       }
+      
+      // Get unique collectors from all bills
+      var collectorsMap = {};
+      allBills.forEach(function(b) {
+        var collector = b.collector || 
+          b['Collector'] || '';
+        var arm = b.arm || b['ARM'] || '';
+        var phone = b.collectorPhone || 
+          b['Collector Phone'] || '';
+        if (collector && !collectorsMap[collector]) {
+          collectorsMap[collector] = {
+            name: collector,
+            arm: arm,
+            phone: phone,
+            totalBills: 0,
+            deliveredBills: [],
+            pendingBills: []
+          };
+        }
+        if (collector) {
+          collectorsMap[collector].totalBills++;
+          
+          var accNo = b.accountNumber || 
+            b['Account Number'] || 
+            b.accountNo || '';
+          
+          var isDelivered = submissions.some(
+            function(s) {
+              return s.accountNo === accNo || 
+                s.account === accNo;
+            });
+          
+          if (isDelivered) {
+            collectorsMap[collector]
+              .deliveredBills.push(b);
+          } else {
+            collectorsMap[collector]
+              .pendingBills.push(b);
+          }
+        }
+      });
+      
+      var collectors = Object.values(
+        collectorsMap).sort(function(a, b) {
+          return b.deliveredBills.length - 
+            a.deliveredBills.length;
+        });
+      
+      // Update overall stats
+      var totalDelivered = submissions.length;
+      var totalPending = allBills.length - 
+        totalDelivered;
+      
+      var tdEl = document.getElementById(
+        'trackerTotalDelivered');
+      var tpEl = document.getElementById(
+        'trackerTotalPending');
+      if (tdEl) tdEl.textContent = 
+        totalDelivered.toLocaleString();
+      if (tpEl) tpEl.textContent = 
+        Math.max(0, totalPending)
+          .toLocaleString();
+      
+      if (collectors.length === 0) {
+        if (list) list.innerHTML = 
+          '<div style="text-align:center;' +
+          'padding:40px;color:#64748b;">' +
+          'No collectors found.</div>';
+        return;
+      }
+      
+      if (list) list.innerHTML = 
+        collectors.map(function(c) {
+          var delivered = c.deliveredBills.length;
+          var pending = c.pendingBills.length;
+          var total = c.totalBills;
+          var pct = total > 0 ? 
+            Math.round((delivered/total)*100) : 0;
+          var progressWidth = pct + '%';
+          var progressColor = pct >= 75 ? 
+            '#22c55e' : pct >= 50 ? 
+            '#f59e0b' : '#3b82f6';
+          
+          var waNumber = (c.phone || '')
+            .toString()
+            .replace(/^0/, '233')
+            .replace(/\D/g, '');
+          
+          return '<div style="background:white;'+
+            'border-radius:16px;padding:16px;'+
+            'box-shadow:0 2px 8px '+
+            'rgba(0,0,0,0.06);">' +
+            
+            '<div style="display:flex;'+
+            'justify-content:space-between;'+
+            'align-items:flex-start;'+
+            'margin-bottom:8px;">' +
+            '<div>' +
+            '<div style="font-weight:800;'+
+            'font-size:15px;color:#0a1628;">'+
+            c.name + '</div>' +
+            '<div style="font-size:12px;'+
+            'color:#64748b;">ARM: '+c.arm+'</div>'+
+            '</div>' +
+            (waNumber ? 
+              '<a href="https://wa.me/'+
+              waNumber+'" target="_blank" '+
+              'style="padding:6px 12px;'+
+              'background:#25D366;color:white;'+
+              'border-radius:8px;font-size:12px;'+
+              'font-weight:700;text-decoration:none;'+
+              'display:flex;align-items:center;'+
+              'gap:4px;">💬 WhatsApp</a>' : '') +
+            '</div>' +
+            
+            '<div style="display:flex;gap:8px;'+
+            'margin-bottom:10px;">' +
+            '<div style="flex:1;background:#dcfce7;'+
+            'border-radius:8px;padding:8px;'+
+            'text-align:center;">' +
+            '<div style="font-size:20px;'+
+            'font-weight:900;color:#15803d;">'+
+            delivered + '</div>' +
+            '<div style="font-size:11px;'+
+            'color:#166534;font-weight:700;">'+
+            '✅ Delivered</div></div>' +
+            '<div style="flex:1;background:#eff6ff;'+
+            'border-radius:8px;padding:8px;'+
+            'text-align:center;">' +
+            '<div style="font-size:20px;'+
+            'font-weight:900;color:#1d4ed8;">'+
+            pending + '</div>' +
+            '<div style="font-size:11px;'+
+            'color:#1e40af;font-weight:700;">'+
+            '🔵 Pending</div></div>' +
+            '</div>' +
+            
+            '<div style="margin-bottom:10px;">' +
+            '<div style="display:flex;'+
+            'justify-content:space-between;'+
+            'font-size:11px;color:#64748b;'+
+            'margin-bottom:4px;">' +
+            '<span>Progress</span>' +
+            '<span>'+pct+'%</span></div>' +
+            '<div style="background:#e2e8f0;'+
+            'border-radius:20px;height:8px;">' +
+            '<div style="background:'+
+            progressColor+';height:8px;'+
+            'border-radius:20px;width:'+
+            progressWidth+';transition:width 0.3s;">'+
+            '</div></div></div>' +
+            
+            '<div style="display:flex;gap:8px;">' +
+            '<button onclick="viewCollectorBills('+
+            '\''+c.name+'\',\'delivered\')" '+
+            'style="flex:1;padding:8px;'+
+            'background:#006B3F;color:white;'+
+            'border:none;border-radius:8px;'+
+            'font-weight:700;cursor:pointer;'+
+            'font-size:12px;">'+
+            '✅ View Delivered</button>' +
+            '<button onclick="viewCollectorBills('+
+            '\''+c.name+'\',\'pending\')" '+
+            'style="flex:1;padding:8px;'+
+            'background:#1d4ed8;color:white;'+
+            'border:none;border-radius:8px;'+
+            'font-weight:700;cursor:pointer;'+
+            'font-size:12px;">'+
+            '🔵 View Pending</button>' +
+            '</div></div>';
+        }).join('');
+    }
+
+    function viewCollectorBills(
+      collectorName, type) {
+      
+      var allBills = window.ALL_BILLS || 
+        window.BILLS_DATA || [];
+      var submissions = JSON.parse(
+        localStorage.getItem(
+          'submitted_bills') || '[]');
+      
+      var collectorBills = allBills.filter(
+        function(b) {
+          return (b.collector || 
+            b['Collector'] || '') === 
+            collectorName;
+        });
+      
+      var isDeliveredView = type === 'delivered';
+      
+      var filtered = collectorBills.filter(
+        function(b) {
+          var accNo = b.accountNumber || 
+            b['Account Number'] || 
+            b.accountNo || '';
+          var delivered = submissions.some(
+            function(s) {
+              return s.accountNo === accNo || 
+                s.account === accNo;
+            });
+          return isDeliveredView ? 
+            delivered : !delivered;
+        });
+      
+      var nameEl = document.getElementById(
+        'modalCollectorName');
+      var subEl = document.getElementById(
+        'modalCollectorSubtitle');
+      var listEl = document.getElementById(
+        'collectorBillsList');
+      
+      if (nameEl) nameEl.textContent = 
+        collectorName;
+      if (subEl) subEl.textContent = 
+        (isDeliveredView ? '✅ Delivered' : 
+        '🔵 Pending') + ' — ' + 
+        filtered.length + ' bills';
+      
+      if (listEl) {
+        if (filtered.length === 0) {
+          listEl.innerHTML = 
+            '<div style="text-align:center;'+
+            'padding:40px;color:#64748b;">'+
+            (isDeliveredView ? 
+              'No delivered bills yet.' :
+              '🎉 All bills delivered!') +
+            '</div>';
+        } else {
+          listEl.innerHTML = filtered.map(
+            function(b) {
+              var accNo = b.accountNumber || 
+                b['Account Number'] || 
+                b.accountNo || '';
+              var name = b.ownerName || 
+                b['Owner Name'] || 
+                b.name || '—';
+              var rateType = b.rateType || 
+                b['Rate Type'] || '';
+              var bill = b.currentBill || 
+                b['Current Bill'] || '';
+              
+              return '<div style="background:'+
+                'white;border-radius:10px;'+
+                'padding:12px;border-left:4px '+
+                'solid '+(isDeliveredView ? 
+                '#22c55e' : '#3b82f6')+';'+
+                'box-shadow:0 1px 4px '+
+                'rgba(0,0,0,0.06);">'+
+                '<div style="font-weight:800;'+
+                'font-size:13px;color:#0a1628;">'+
+                accNo + '</div>' +
+                '<div style="font-size:12px;'+
+                'color:#374151;margin-top:2px;">'+
+                name + '</div>' +
+                '<div style="display:flex;'+
+                'gap:8px;margin-top:4px;">'+
+                (rateType ? 
+                  '<span style="background:#f1f5f9;'+
+                  'color:#64748b;padding:2px 6px;'+
+                  'border-radius:4px;font-size:10px;">'+
+                  rateType+'</span>' : '') +
+                (bill ? 
+                  '<span style="background:#f1f5f9;'+
+                  'color:#64748b;padding:2px 6px;'+
+                  'border-radius:4px;font-size:10px;">'+
+                  'GHS '+bill+'</span>' : '') +
+                '<span style="background:'+(
+                  isDeliveredView ? 
+                  '#dcfce7' : '#eff6ff')+
+                ';color:'+(isDeliveredView ? 
+                '#15803d' : '#1d4ed8')+
+                ';padding:2px 6px;'+
+                'border-radius:4px;'+
+                'font-size:10px;font-weight:700;">'+
+                (isDeliveredView ? 
+                  '✅ Delivered' : '🔵 Pending')+
+                '</span></div></div>';
+            }).join('');
+        }
+      }
+      
+      var modal = document.getElementById(
+        'collectorBillsModal');
+      if (modal) modal.style.display = 'block';
+    }
+
+    function closeCollectorModal() {
+      var modal = document.getElementById(
+        'collectorBillsModal');
+      if (modal) modal.style.display = 'none';
     }
 
     function syncSubmissions() {
