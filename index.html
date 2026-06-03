@@ -2434,19 +2434,23 @@
         if (data && data.bills) {
           var submitted = data.bills.map(
             function(b) {
+              var accNo = b['Account Number'] || 
+                b.accountNo || 
+                b['Account No'] || 
+                b.account || '';
               return {
-                accountNo: b.accountNo || 
-                  b['Account No'] || b.account || '',
-                account: b.accountNo || 
-                  b['Account No'] || b.account || '',
-                name: b.name || 
-                  b['Owner Name'] || '',
-                collector: b.collector || '',
-                arm: b.arm || '',
-                date: b.date || '',
-                time: b.time || ''
+                accountNo: accNo,
+                account: accNo,
+                name: b['Owner Name'] || 
+                  b.name || '',
+                collector: b['Collector'] || 
+                  b.collector || '',
+                arm: b['ARM'] || b.arm || '',
+                date: b['Date'] || b.date || '',
+                time: b['Time'] || b.time || ''
               };
             });
+          localStorage.removeItem('submitted_bills');
           localStorage.setItem(
             'submitted_bills',
             JSON.stringify(submitted));
