@@ -1014,7 +1014,7 @@
     };
 
 
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRjZS5WZqw0XCu6w6Vd-VrMhQP8kkkMpRb3qVoaHqdWo5cQzRtwbEXDCluj7pzoOMf/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHbQyBG3CFj3WmPDTRK8U6kapu0SsR77c-6dlxfbYl_t4G4LyM8vHAVWON6UuXPE05/exec';
 
     let currentSupervisor = "";
     let currentCollector = null;
@@ -1786,6 +1786,7 @@
 
       const payload = {
         action: 'submitDailyLog',
+        district: 'Lower Manya Krobo',
         supervisor: state.supervisor,
         collector: state.collector,
         collectorUnit: state.collectorUnit,
