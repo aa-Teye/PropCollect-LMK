@@ -1395,7 +1395,7 @@
       card.id = `bill-card-${idx}`;
       const accNo = bill.accountNumber || 'N/A';
       const ownerName = bill.ownerName || 'No owner name';
-      const rateType = bill.rateType || 'BOP';
+      const rateType = bill.billType || bill.rateType || 'BOP';
       const badgeColor = rateType === 'Property Rate' ? '#3b82f6' : (rateType === 'BOP' ? '#fcd116' : '#fcd116');
       const badgeText = rateType === 'Property Rate' ? '#fff' : '#000';
       const currentBill = parseFloat(bill.currentBill || 0).toFixed(2);
@@ -2130,13 +2130,6 @@
     // ========================================
     window.BILLS_DATA = window.ALL_BILLS;
     window.LMK_BILLS = window.ALL_BILLS;
-    (function() {
-      var collToSup = {};
-      Object.keys(supervisorData).forEach(function(sup) {
-        supervisorData[sup].collectors.forEach(function(c) { collToSup[c.name] = sup; });
-      });
-      (window.LMK_BILLS || []).forEach(function(b) { b.supervisor = collToSup[b.collector] || '—'; });
-    })();
     window.findLMKBill = function(query) {
       if (!window.LMK_BILLS) return null;
       var q = query.toLowerCase();
