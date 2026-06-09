@@ -265,6 +265,12 @@
     <div class="nav-item" id="nav-analytics" onclick="switchTab('analytics')">📈 Analytics</div>
     <div class="nav-item" id="nav-export" onclick="switchTab('export')">⬇ Export</div>
     <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">⚙ Settings</div>
+    <div style="border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;"></div>
+    <div class="nav-item" id="nav-ablekuma"
+      onclick="window.location.href='https://aa-teye.github.io/Prop_collect/dashboard.html'"
+      style="color:#FCD116; font-weight:700;">
+      🏘 Ablekuma North
+    </div>
   </div>
 </div>
 
@@ -1011,8 +1017,8 @@
     }
     
     if (valid) {
-      sessionStorage.setItem('propcollect_lmk_role', currentUserRole);
-      sessionStorage.setItem('propcollect_lmk_name', currentUserName);
+      sessionStorage.setItem('propcollect_role', currentUserRole);
+      sessionStorage.setItem('propcollect_name', currentUserName);
       proceedToApp();
     } else {
       alert('Invalid PIN');
@@ -1050,8 +1056,8 @@
   }
 
   window.addEventListener('DOMContentLoaded', function() {
-    const role = sessionStorage.getItem('propcollect_lmk_role');
-    const name = sessionStorage.getItem('propcollect_lmk_name');
+    const role = sessionStorage.getItem('propcollect_role');
+    const name = sessionStorage.getItem('propcollect_name');
     if (role && name) {
       currentUserRole = role;
       currentUserName = name;
